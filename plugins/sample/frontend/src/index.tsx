@@ -30,7 +30,6 @@ const Plugin: PluginModule = {
                         />
                     }
                     labelKey="sample-es"
-                    fallbackLabel="Sample ES"
                     locale={SampleLocaleLazy}
                 />
             ),
@@ -47,7 +46,6 @@ const Plugin: PluginModule = {
                                 />
                             }
                             labelKey="page-1"
-                            fallbackLabel="Page 1"
                             locale={SampleLocaleLazy}
                         />
                     ),
@@ -65,7 +63,6 @@ const Plugin: PluginModule = {
                                 />
                             }
                             labelKey="page-2"
-                            fallbackLabel="Page 2"
                             locale={SampleLocaleLazy}
                         />
                     ),
