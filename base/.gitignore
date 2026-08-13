@@ -1,0 +1,5 @@
+data
+db-data
+backend/installed-plugins
+backend/logs
+available-plugins/**

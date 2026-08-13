@@ -1,0 +1,11 @@
+{
+    "sample-es": "示例插件",
+    "page-1": "页面 1",
+    "page-2": "页面 2",
+    "page-1-title": "示例页面 1",
+    "page-2-title": "示例页面 2",
+    "hello-loading": "正在加载…",
+    "hello-message": "API 消息",
+    "items-empty": "暂无示例数据",
+    "items-title": "示例数据"
+}

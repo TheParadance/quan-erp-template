@@ -1,0 +1,9 @@
+{
+    "name": "sample-es",
+    "type": "",
+    "pluginVersion": "1.0.0",
+    "description": "Sample plugin demonstrating Quan ERP backend and frontend patterns",
+    "moduleEntryObject": "Module",
+    "requiredBasedVersion": "1.0.0",
+    "pluginDependencies": {}
+}

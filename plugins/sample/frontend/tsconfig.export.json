@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "target": "ESNext",
+
+    "strict": true,
+    "noImplicitAny": false,
+
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+
+    "outDir": "dist/export",
+    "rootDir": "src",
+
+    "tsBuildInfoFile": "./.tsbuildinfo"
+  },
+  "include": ["src/export.ts"]
+}

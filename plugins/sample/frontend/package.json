@@ -1,0 +1,86 @@
+{
+  "name": "@quan-erp-plugins/accounting-frontend",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/module.js",
+  "module": "dist/module.js",
+  "types": "dist/export/export.d.ts",
+  "scripts": {
+    "dev": "MODE=dev tsc -b && MODE=dev vite build --watch",
+    "build:export": "tsc -b ./tsconfig.export.json",
+    "build": "MODE=dev tsc -b && MODE=dev vite build",
+    "build:prod": "MODE=prod tsc -b && MODE=prod vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist-export/export.js",
+      "default": "./dist-export/export.js"
+    }
+  },
+  "files": [
+    "dist-export",
+    "types"
+  ],
+  "dependencies": {
+    "@icon-park/react": "^1.4.2",
+    "@quan-erp/base-frontend": "^1.0.4",
+    "@quan-erp/shared-frontend-core": "^1.0.4",
+    "@quan-erp/shared-types": "^1.0.4",
+    "@quan-erp/shared-ui": "^1.0.4",
+    "@tanstack/react-query": "^5.90.10",
+    "capacitor-file-picker": "^1.0.10",
+    "i": "^0.3.7",
+    "npm": "^11.7.0",
+    "patch-package": "^8.0.1",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-router-dom": "7.9.5",
+    "tailwindcss": "^4.1.16",
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.8"
+  },
+  "peerDependencies": {
+    "@awesome-cordova-plugins/screen-orientation": "^8.1.0",
+    "@capacitor-community/bluetooth-le": "^7.2.0",
+    "@capacitor-community/camera-preview": "^7.0.2",
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/camera": "^7.0.2",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/clipboard": "^7.0.2",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/device": "^7.0.2",
+    "@capacitor/filesystem": "^7.1.4",
+    "@capacitor/haptics": "^7.0.2",
+    "@capacitor/ios": "^7.4.4",
+    "@capacitor/local-notifications": "^7.0.3",
+    "@capacitor/network": "^7.0.2",
+    "@capacitor/preferences": "^7.0.2",
+    "dayjs": "^1.11.19"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@quan-erp/vite-css-plugins": "^1.0.3",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/vite": "^4.1.16",
+    "@types/node": "^24.10.1",
+    "@types/postcss-safe-parser": "^5.0.4",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.4",
+    "autoprefixer": "^10.4.23",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.22",
+    "globals": "^16.4.0",
+    "postcss-safe-parser": "^7.0.1",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.7.1",
+    "terser": "^5.48.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.45.0",
+    "vite": "^7.1.7",
+    "vite-plugin-dts": "^4.5.4"
+  }
+}

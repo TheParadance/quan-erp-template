@@ -1,0 +1,158 @@
+services:
+  db:
+    image: postgres:17
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: quan-erp
+    ports:
+      - "5432:5432"  # exposes to host if needed
+    volumes:
+      - ./data/db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d quan-erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      secrets:
+        - npmrc
+    image: docker.internal.theparadance.dev/quan-erp/base-backend:1.0.0-beta-dev.65
+    platform: linux/amd64
+    container_name: backend
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      NODE_ENV: production
+
+      MODE: dev
+      BASE_VERSION: 1.0.0-beta.65
+      ORGANIZATION_ID: quan-erp
+
+      FRONTEND_URL: http://localhost 
+      BACKEND_URL: http://localhost:8080
+      DEV_TOOL_URL: http://localhost:8081
+      PLUGIN_SERVER_URL: http://localhost:8082
+
+      DEBUG_LOG: plugin-manager
+      DEV_DEBOUNCE_DELAY_TIMEOUT: 20000
+      DEV_SCHEDULE_RESTART_TIMEOUT: 1500
+
+      ACCESS_TOKEN_SECRET: 123456
+      ACCESS_TOKEN_SECRET_EXPIRATION_TIME: 15m
+      REFRESH_TOKEN_SECRET: 123456
+      REFRESH_TOKEN_SECRET_EXPIRATION_TIME: 30d
+
+      OPENAI_BASE_URL: https://api.deepseek.com
+      OPENAI_API_KEY: 
+
+      # database (service name from this compose file)
+      DB_HOST: db
+      DB_USERNAME: postgres
+      DB_PASSWORD: 123456
+      DB_PORT: 5432
+      DB_SCHEMA: quan-erp
+      DB_SYNC: true
+
+      # redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 123456
+
+      CLUSTER_MODE: false
+      CLUSTER_MAX_COUNT: 2
+      
+      ENV_ENCRYPTION_KEY: 2cd83c44d4bd165cd91513d50140399a
+
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost,https://localhost
+
+      AVAILABLE_PLUGINS_FOLDER: /app/available-plugins
+      INSTALLED_PLUGINS_FOLDER: /app/installed-plugins
+
+      APP_DATA_FOLDER: /app/data/data/
+      UPLOAD_FILE_TEMP_FOLDER: /app/data/temp
+      UPLOAD_FILE_FOLDER: /app/data/data/
+      PLUGINS_ENV_FILE: /app/data/data/plugin.env.json
+      RUNNER_FLOW_FILE: /app/data/data/workflows/
+
+      FIREBASE_CONFIG: ''
+
+      ROOT_ADMIN_USERNAME: admin
+      ROOT_ADMIN_PASSWORD: 123123
+
+      MAX_USER_LIMIT: 5
+      MAX_ACTIVE_USER_LIMIT: 5
+      MAX_USER_SESSION_LIMIT_PER_USER: 1
+      MAX_ORGANIZATION_BRANCH: 1
+      MAX_ROLE_LIMIT: 5
+      MAX_SUBSCRIPTION_GRACE_PERIOD_DAYS: 14
+      DEVELOPER_CONFIG_PASSWORD: 123456
+      SUBSCRIPTION_END_DATE: '2026-01-01'
+
+    volumes:
+      - ./backend/installed-plugins:/app/installed-plugins
+      - ./data:/app/data
+      - ./backend/logs:/app/logs
+      - ./available-plugins:/app/available-plugins
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7
+    container_name: quanerp-redis
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --requirepass "123456"
+      --appendonly yes
+    networks:
+      - app-network
+    volumes:
+      - ./data/redis:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping", "-a", "123456"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      secrets:
+        - npmrc
+    platform: linux/amd64
+    image: docker.internal.theparadance.dev/quan-erp/base-frontend:1.0.0-beta-dev.65
+    container_name: frontend
+    environment:
+      VITE_BACKEND_API: http://192.168.5.16:8080
+      VITE_MODE: dev
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+
+secrets:
+  npmrc:
+    file: $HOME/.npmrc # path to your local .npmrc file
+
+networks:
+  app-network:
+    driver: bridge
