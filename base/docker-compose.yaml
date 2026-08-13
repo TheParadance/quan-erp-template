@@ -54,7 +54,7 @@ services:
       REFRESH_TOKEN_SECRET_EXPIRATION_TIME: 30d
 
       OPENAI_BASE_URL: https://api.deepseek.com
-      OPENAI_API_KEY: 
+      OPENAI_API_KEY: <sk-key>
 
       # database (service name from this compose file)
       DB_HOST: db
