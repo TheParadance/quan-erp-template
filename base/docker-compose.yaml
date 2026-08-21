@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile
       secrets:
         - npmrc
-    image: theparadance/quan-erp-base-backend:1.0.5
+    image: theparadance/quan-erp-base-backend:1.0.6
     platform: linux/amd64
     container_name: backend
     ports:
@@ -139,7 +139,7 @@ services:
       secrets:
         - npmrc
     platform: linux/amd64
-    image: theparadance/quan-erp-base-frontend:1.0.5
+    image: theparadance/quan-erp-base-frontend:1.0.6
     container_name: frontend
     environment:
       VITE_BACKEND_API: http://192.168.5.16:8080
