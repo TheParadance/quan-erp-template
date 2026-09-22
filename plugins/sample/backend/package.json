@@ -40,7 +40,8 @@
     "pg": "^8.16.3",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "rollup": "^4.63.4"
   },
   "peerDependencies": {
     "express": "^5.1.0"
