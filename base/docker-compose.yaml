@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17
+    image: pgvector/pgvector:pg17
     container_name: postgres
     restart: always
     environment:
@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: 123456
       POSTGRES_DB: quan-erp
     ports:
-      - "5432:5432"  # exposes to host if needed
+      - "5432:5432" # exposes to host if needed
     volumes:
       - ./data/db-data:/var/lib/postgresql/data
     networks:
@@ -39,7 +39,7 @@ services:
       BASE_VERSION: 1.1.0
       ORGANIZATION_ID: quan-erp
 
-      FRONTEND_URL: http://localhost 
+      FRONTEND_URL: http://localhost
       BACKEND_URL: http://localhost:8080
       DEV_TOOL_URL: http://localhost:8081
       PLUGIN_SERVER_URL: http://localhost:8082
@@ -71,7 +71,7 @@ services:
 
       CLUSTER_MODE: false
       CLUSTER_MAX_COUNT: 2
-      
+
       ENV_ENCRYPTION_KEY: 2cd83c44d4bd165cd91513d50140399a
 
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost,https://localhost
@@ -85,7 +85,7 @@ services:
       PLUGINS_ENV_FILE: /app/data/data/plugin.env.json
       RUNNER_FLOW_FILE: /app/data/data/workflows/
 
-      FIREBASE_CONFIG: ''
+      FIREBASE_CONFIG: ""
 
       ROOT_ADMIN_USERNAME: admin
       ROOT_ADMIN_PASSWORD: 123123
@@ -97,7 +97,7 @@ services:
       MAX_ROLE_LIMIT: 5
       MAX_SUBSCRIPTION_GRACE_PERIOD_DAYS: 14
       DEVELOPER_CONFIG_PASSWORD: 123456
-      SUBSCRIPTION_END_DATE: '2026-01-01'
+      SUBSCRIPTION_END_DATE: "2026-01-01"
 
     volumes:
       - ./backend/installed-plugins:/app/installed-plugins
