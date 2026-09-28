@@ -13,19 +13,11 @@ base/
 │   └── installed-plugins
 └── docker-compose.yaml
 plugins/
-├── accounting/
+├── my-plugin/
 │   ├── frontend
 │   ├── backend
 │   └── module.metadata.json
-├── food-menu/
-│   ├── frontend
-│   ├── backend
-│   └── module.metadata.json
-├── fleet-management/
-│   ├── frontend
-│   ├── backend
-│   └── module.metadata.json
-└── inventory/
+└── other-plugin/
     ├── frontend
     ├── backend
     └── module.metadata.json

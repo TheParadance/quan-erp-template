@@ -9,6 +9,7 @@ The table name specified in the `@Entity()` decorator **MUST** always start with
 ### Pattern:
 ```typescript
 import metadata from '../../../../module.metadata.json' with { type: 'json' };
+// metadata.name === "my-plugin"
 
 @Entity(`${metadata.name}_table_name`)
 export class MyEntity {
@@ -28,20 +29,21 @@ export class MyEntity {
 
 ## Example Implementation
 
-Below is an example of a correctly defined entity for a driver document in a fleet management plugin:
+Below is an example of a correctly defined entity for plugin `my-plugin`:
 
 ```typescript
 import { BaseEntity } from "@quan-erp/shared-backend-core";
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 import metadata from '../../../../module.metadata.json' with { type: 'json' };
+// metadata.name === "my-plugin"
 
-@Entity(`${metadata.name}_driver_document`)
-export class DriverDocumentEntity extends BaseEntity {
+@Entity(`${metadata.name}_item`)
+export class MyItemEntity extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id: number;
 
   @Column()
-  documentName: string;
+  name: string;
   
   // ... other columns
 }
@@ -67,8 +69,8 @@ Entities are grouped by datasource. Most plugins should use the `'default'` data
 entities: [
     {
         plugin: 'default', // Merges entities into the primary "default" datasource
-        entities: [ MyEntity ],
+        entities: [ MyItemEntity ],
     }
 ]
 ```
-This ensures that the Quan ERP core merges your plugin's entities into the primary database connection shared by the platform.
+This ensures that the platform merges your plugin's entities into the primary database connection shared by the platform.

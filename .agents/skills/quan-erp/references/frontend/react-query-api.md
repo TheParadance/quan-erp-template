@@ -19,12 +19,12 @@ src/api/<domain>/
 - **`.types.ts`**: Contains all TypeScript interfaces, payloads, and DTOs related to the domain.
 - **`.queries.ts`**: Custom `useQuery` hooks.
 - **`.mutations.ts`**: Custom `useMutation` hooks.
-- **`.constants.ts`**: Typically stores React Query cache keys (e.g., `DOMAIN_QUERY_KEYS`), along with any other domain-specific constants.
+- **`.constants.ts`**: Typically stores React Query cache keys (e.g., `MY_ITEM_QUERY_KEYS`), along with any other domain-specific constants.
 
 ## 2. Naming Convention
 
 API endpoints declared with this wrapper MUST follow a strict naming convention: `<action><domain>Api`. 
-For example: `createBranchApi`, `getBranchApi`, `updateBranchApi`.
+For example: `createMyItemApi`, `getMyItemApi`, `updateMyItemApi`.
 This ensures consistency across the codebase.
 
 ## 3. Declaring APIs with `withApiMetadataFetchFn`
@@ -33,20 +33,24 @@ When declaring an API function that will be consumed by React Query hooks (`useQ
 
 This wrapper combines the raw HTTP `fetchFn` logic with the required `api` metadata (`method` and `url`).
 
-**Example implementation:**
+> [!IMPORTANT]
+> For **plugin** APIs, `api.url` and axios paths must be the **full** mounted path: `` `/${metadata.name}/item` `` (e.g. `/my-plugin/item`). Backend `@Controller` uses the resource only (`"/item"`) — the framework adds the plugin prefix. Do not omit the prefix on the frontend, and do not put the plugin name in `@Controller`. See [Call Backend API](./call-backend-api.md) and [Annotations `@Controller`](../backend/annotations.md).
+
+**Example implementation** (`metadata.name === "my-plugin"`):
 ```typescript
 import { withApiMetadataFetchFn } from "@quan-erp/shared-types";
 import type { RequestIndexPaginationDto } from "@quan-erp/shared-frontend-core";
-import axiosClient from "../../utils/axios-client";
-import type { BranchDto } from "./branch.type";
+import { getAxiosClient } from "../../lib/axios";
+import type { MyItemDto } from "./item.types";
+import metadata from "../../../module.metadata.json" with { type: "json" };
 
-export const getBranchApi = withApiMetadataFetchFn({
+export const getMyItemApi = withApiMetadataFetchFn({
     // 1. API Metadata used for Permission checks
-    api: { method: 'GET', url: '/branch' },
+    api: { method: 'GET', url: `/${metadata.name}/item` },
     
     // 2. The actual data fetching logic — return the unwrapped payload array/object
-    fetchFn: async (skip: number, limit: number, search?: string): Promise<BranchDto[]> => {
-        const response = await axiosClient.get(`/branch`, {
+    fetchFn: async (skip: number, limit: number, search?: string): Promise<MyItemDto[]> => {
+        const response = await getAxiosClient().get(`/${metadata.name}/item`, {
             params: { skip, limit, search }
         });
         return response.data.payload;
@@ -69,15 +73,16 @@ import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import type { RequestIndexPaginationDto } from "@quan-erp/shared-frontend-core";
 import { resolveIndexPagination } from "../../utils/pagination";
 import { DEFAULT_STALE_TIME } from "../../utils/common";
+import { MY_ITEM_QUERY_KEYS } from "./item.constants";
 
-export function useBranchQuery(
+export function useMyItemQuery(
     query: RequestIndexPaginationDto = {},
-    option?: Omit<UseQueryOptions<BranchDto[]>, 'queryFn' | 'queryKey'>,
+    option?: Omit<UseQueryOptions<MyItemDto[]>, 'queryFn' | 'queryKey'>,
 ) {
     const { currentPage, pageSize, skip, query: search } = resolveIndexPagination(query)
     return useQuery({
-        queryFn: () => getBranchApi.fetchFn(skip, pageSize, search ?? undefined),
-        queryKey: ['branch', currentPage, pageSize, search],
+        queryFn: () => getMyItemApi.fetchFn(skip, pageSize, search ?? undefined),
+        queryKey: [MY_ITEM_QUERY_KEYS.list, currentPage, pageSize, search],
         staleTime: DEFAULT_STALE_TIME,
         ...(option || {}),
     })
@@ -97,14 +102,14 @@ export function useBranchQuery(
 Extend `RequestIndexPaginationDto` with extra fields (do **not** put filters in a third positional arg):
 
 ```typescript
-export type PartnerQueryDto = RequestIndexPaginationDto<string, number, number, {
-    isSupplier?: boolean;
-    isCustomer?: boolean;
+export type MyItemQueryDto = RequestIndexPaginationDto<string, number, number, {
+    isActive?: boolean;
+    categoryId?: number;
 }>;
 
-export function usePartnerQuery(
-    query: PartnerQueryDto = {},
-    option?: Omit<UseQueryOptions<PartnerDto[]>, 'queryFn' | 'queryKey'>,
+export function useMyItemQuery(
+    query: MyItemQueryDto = {},
+    option?: Omit<UseQueryOptions<MyItemDto[]>, 'queryFn' | 'queryKey'>,
 ) { /* resolveIndexPagination + filters */ }
 ```
 
@@ -114,22 +119,21 @@ When the resource is not an index list, put required ids in an **object** as the
 
 ```typescript
 // Correct
-useUnitOfConversionToQuery({ fromId, toId }, { enabled: true })
-useApiPermissionQuery(roleId, { enabled: !!roleId })
-useAIToolsQuery({ staleTime: 60_000 })
+useMyItemDetailQuery({ itemId }, { enabled: !!itemId })
+useMyItemRelatedQuery({ fromId, toId }, { enabled: true })
 
 // Incorrect
-useUnitOfConversionToQuery(fromId, toId)
-useBranchQuery(0, 100)
+useMyItemRelatedQuery(fromId, toId)
+useMyItemQuery(0, 100)
 ```
 
 ### Call-site examples
 
 ```tsx
-// List
-const { data: branches = [] } = useBranchQuery({ currentPage: 1, pageSize: 100 });
-const { data: partners = [] } = usePartnerQuery(
-    { currentPage: 1, pageSize: 50, query: debouncedSearch, isCustomer: true },
+// List — plugin my-plugin
+const { data: items = [] } = useMyItemQuery({ currentPage: 1, pageSize: 100 });
+const { data: filtered = [] } = useMyItemQuery(
+    { currentPage: 1, pageSize: 50, query: debouncedSearch, isActive: true },
     { enabled: open },
 );
 
@@ -153,15 +157,16 @@ When you want to use the declared API inside a React Query hook, you must refere
 **Mutation Example:**
 ```typescript
 import { useMutation } from "@tanstack/react-query";
+import metadata from "../../../module.metadata.json" with { type: "json" };
 
-export const createBranchApi = withApiMetadataFetchFn({
-    api: { method: 'POST', url: '/branch' },
+export const createMyItemApi = withApiMetadataFetchFn({
+    api: { method: 'POST', url: `/${metadata.name}/item` },
     fetchFn: async (data: any) => { /* logic */ }
 });
 
-export function useCreateBranchMutation() {
+export function useCreateMyItemMutation() {
     return useMutation({
-        mutationFn: (data: any) => createBranchApi.fetchFn(data), // Reference .fetchFn here!
+        mutationFn: (data: any) => createMyItemApi.fetchFn(data), // Reference .fetchFn here!
     });
 }
 ```

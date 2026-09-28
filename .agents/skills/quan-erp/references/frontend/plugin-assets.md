@@ -6,15 +6,17 @@ Quan ERP plugins can include static assets such as images, audio, or configurati
 
 Asset files must be placed in the plugin's frontend `public` directory:
 
-`plugins/<plugin-name>/frontend/public/`
+`plugins/my-plugin/frontend/public/`
 
 **Example Structure:**
 ```text
-plugins/food-menu/
+plugins/my-plugin/
 └── frontend/
     └── public/
         └── audio/
-            └── bell.mp3
+            └── my-bell.mp3
+        └── images/
+            └── my-logo.png
 ```
 
 ---
@@ -37,13 +39,17 @@ This example shows how to resolve and play a notification sound stored in the pl
 ```typescript
 import { PluginAssets } from '@quan-erp/shared-frontend-core';
 import { metadata } from '../../lib/metadata';
+// metadata.name === "my-plugin"
 import type { PluginMetadataInfo } from '@quan-erp/shared-types';
 
-export function useNotification() {
+export function useMyNotification() {
     const playSound = () => {
         try {
             // Resolve the network URL for the asset
-            const audioUrl = PluginAssets.network(metadata as PluginMetadataInfo, "/audio/bell.mp3");
+            const audioUrl = PluginAssets.network(
+                metadata as PluginMetadataInfo,
+                "/audio/my-bell.mp3",
+            );
             
             // Use standard browser Audio API
             const audio = new Audio(audioUrl);
@@ -61,6 +67,6 @@ export function useNotification() {
 
 ## Best Practices
 
-1.  **Always use `PluginAssets`**: Never hardcode URLs or relative paths like `/audio/bell.mp3` directly in your code, as the plugin might be served from a different base path or subdomain in production.
+1.  **Always use `PluginAssets`**: Never hardcode URLs or relative paths like `/audio/my-bell.mp3` directly in your code, as the plugin might be served from a different base path or subdomain in production.
 2.  **Type Casting**: Ensure you cast your metadata to `PluginMetadataInfo` if required by the TypeScript compiler.
 3.  **Error Handling**: Always wrap media playback in a `try...catch` block and handle browser autoplay restrictions (e.g., catching `play()` promise errors).

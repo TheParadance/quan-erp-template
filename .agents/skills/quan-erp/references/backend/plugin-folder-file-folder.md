@@ -20,15 +20,30 @@ Used for storing temporary files, such as partial uploads before they are proces
 
 ### Plugin Data Folder
 Every plugin should store its **runtime-generated data** (e.g., generated reports, exported CSVs, user uploads, localized runtime config) in its own subdirectory within the global data folder.
-- **Path**: `<APP_DATA_FOLDER>/<pluginName>`
+- **Path**: `<APP_DATA_FOLDER>/<pluginName>` (e.g. `.../my-plugin`)
 - **Utility**: `AppFolder.getPluginDataFolder(pluginName)`
 - **Usage**: Always use this for storing any files generated or updated during the application **runtime**. This folder is persistent across restarts but is NOT part of the plugin's source bundle.
+
+```typescript
+import { AppFolder } from "@quan-erp/shared-backend-core";
+import metadata from "../../../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
+
+const myDataFolder = AppFolder.getPluginDataFolder(metadata.name);
+```
 
 ### Plugin Asset Folder
 This folder contains **static assets bundled with the plugin source code** (e.g., document templates, seed JSON files, default icons).
 - **Path**: `<INSTALLED_PLUGINS_FOLDER>/<pluginName>/<version>/backend/assets`
 - **Utility**: `AppFolder.getPluginAssetFolder(pluginName, version)`
 - **Usage**: Use this for **read-only assets** that are shipped with your plugin. These files are part of the plugin package and should not be modified at runtime.
+
+```typescript
+const myAssetFolder = AppFolder.getPluginAssetFolder(
+    metadata.name,
+    metadata.pluginVersion,
+);
+```
 
 ---
 
@@ -38,7 +53,14 @@ To ensure assets are correctly bundled and available at runtime, they MUST be st
 
 ### Source Location
 In your plugin's development directory, place all backend assets here:
-`plugins/<plugin-name>/backend/assets/`
+`plugins/my-plugin/backend/assets/`
+
+```text
+plugins/my-plugin/backend/assets/
+  sample-document.pdf
+  templates/
+    my-template.html
+```
 
 ### Build & Bundling
 When the plugin is built, the build system automatically packs **all files and subdirectories** within the `assets/` folder into the final plugin bundle. This ensures that any templates, configuration files, or static data required by your backend services are preserved and can be resolved using the `AppFolder` utility after installation.
@@ -58,6 +80,6 @@ The following methods are available via `import { AppFolder } from "@quan-erp/sh
 
 ## Best Practices
 
-1. **Isolation**: Never write to the root `APP_DATA_FOLDER` directly. Always use your plugin's specific data folder.
+1. **Isolation**: Never write to the root `APP_DATA_FOLDER` directly. Always use your plugin's specific data folder (e.g. `AppFolder.getPluginDataFolder(metadata.name)` for `my-plugin`).
 2. **Persistence**: Do not store critical data in the temp folder, as it may be cleared by the system.
 3. **Asset Resolution**: Use `getPluginAssetFolder` to load static files needed by your backend services, ensuring they are correctly located after deployment.

@@ -144,7 +144,10 @@ export function MyResponsivePage() {
                 {isMobile && (
                     <FloatingActionButton
                         // 7. Adjust position to avoid overlap with bottom nav
-                        className={cn("absolute", isContainInBottomNav ? "bottom-25" : "bottom-5")}
+                        className={cn(
+                            "absolute",
+                            isContainInBottomNav ? "!bottom-25" : "!bottom-5",
+                        )}
                         adaptivePosition={true}
                         expandable={false}
                     >
@@ -171,7 +174,7 @@ export function MyResponsivePage() {
 ## 6. Integration Rationale
 
 1.  **Bottom Nav Visibility**: Root-level pages (`isContainInBottomNav` is true) keep the navigation bar visible and hide the back button. Sub-pages hide the bar and show a back button.
-2.  **FAB Positioning**: FABs must use `bottom-25` when `isContainInBottomNav` is true to stay above the navigation bar, otherwise they sit at `bottom-5`.
+2.  **FAB Positioning**: FABs must use `!bottom-25` when `isContainInBottomNav` is true to stay above the navigation bar, otherwise they sit at `!bottom-5`. Always pair with `useIsContainInBottomNavBar` + `<Page bottomNav>`.
 3.  **Decoupled Dialogs**: Using a shared state (`isCreateOpen`) allows the desktop header button and the mobile FAB to trigger the exact same dialog instance, preventing state fragmentation.
 4.  **Content Spacing**: Mobile lists must use `pb-20` (or similar) to ensure the bottom navigation bar or FAB doesn't obscure the final list item.
 

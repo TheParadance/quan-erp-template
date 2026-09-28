@@ -62,6 +62,20 @@ Utilities to access shared system-wide directories.
 | **Persistence** | Immutable (overwritten on update). | Persistent across plugin updates. |
 | **Path Utility** | `getPluginAssetFolder(name, version)` | `getPluginDataFolder(name)` |
 
+## Example asset files
+
+Typical files to keep under `backend/assets/`:
+
+```text
+backend/assets/
+  sample-document.pdf
+  icon.png
+  templates/
+    invoice.html
+```
+
+Retrieve them at runtime with `AppFolder.getPluginAssetFolder(metadata.name, metadata.pluginVersion)`.
+
 ## Why this is required:
 1. **Version Isolation**: Ensures that different versions of the same plugin do not overwrite each other's assets.
 2. **Environment Portability**: Abstracting the path retrieval through `AppFolder` ensures your plugin works correctly across different server environments (Dev, Staging, Production).

@@ -10,7 +10,7 @@ The package `name` property must follow this structural pattern:
 
 ### Components:
 - **`@quan-erp-plugins/`**: Every plugin package MUST be scoped under this prefix.
-- **`<plugin-name>`**: This part MUST exactly match the `name` property defined in the plugin's root [module.metadata.json](file:///Users/jianshangquan/App-Developemnt/ThePradanceCodeProject/quan-erp-node/developers/quan-erp-food-menu/plugins/fleet-management/module.metadata.json).
+- **`<plugin-name>`**: This part MUST exactly match the `name` property defined in the plugin's root `module.metadata.json`.
 - **`<side>`**: Must be either `backend` or `frontend`.
 
 ---
@@ -21,26 +21,24 @@ If your plugin's `module.metadata.json` is configured as follows:
 
 ```json
 {
-  "name": "fleet-management",
+  "name": "my-plugin",
   "version": "1.0.0"
 }
 ```
 
 Then your `package.json` files must be named as follows:
 
-### Backend (`plugins/fleet-management/backend/package.json`)
+### Backend (`plugins/my-plugin/backend/package.json`)
 ```json
 {
-  "name": "@quan-erp-plugins/fleet-management-backend",
-  ...
+  "name": "@quan-erp-plugins/my-plugin-backend"
 }
 ```
 
-### Frontend (`plugins/fleet-management/frontend/package.json`)
+### Frontend (`plugins/my-plugin/frontend/package.json`)
 ```json
 {
-  "name": "@quan-erp-plugins/fleet-management-frontend",
-  ...
+  "name": "@quan-erp-plugins/my-plugin-frontend"
 }
 ```
 
@@ -48,7 +46,7 @@ Then your `package.json` files must be named as follows:
 
 ## Why This Matters
 
-1.  **Cross-Plugin Injection**: When using `@Inject(Service, "fleet-management")`, the system uses these names to locate the corresponding package.
+1.  **Cross-Plugin Injection**: When using `@Inject(MyService, "my-plugin")`, the system uses these names to locate the corresponding package.
 2.  **Automated Publishing**: The build and release scripts rely on this pattern to correctly tag and publish packages to the internal registry.
 3.  **Dependency Resolution**: Consistent naming prevents version conflicts and ensures that frontend components can correctly reference their backend counterparts.
 

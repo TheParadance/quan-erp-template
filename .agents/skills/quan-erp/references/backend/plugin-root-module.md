@@ -140,6 +140,29 @@ export class PluginModule {
 }
 ```
 
+### Plugin-scoped env (`@InjectEnv`)
+
+See **[Plugin Env](./plugin-env.md)** for full isolation rules, seeding, and `sync()`.
+
+`@InjectEnv()` injects an `Env` bag **owned by this plugin only**. Seed every key your services read in the root module `@OnInit`, then `await this.env.sync()`:
+
+```typescript
+@InjectEnv()
+env: Env;
+
+@OnInit()
+async init() {
+    if (!this.env.get("MY_APP_URL")) {
+        this.env.set("MY_APP_URL", "http://localhost:5173");
+    }
+    if (!this.env.get("S3_BUCKET")) {
+        this.env.set("S3_BUCKET", "my-plugin-bucket");
+    }
+    // secrets: this.env.set("TOKEN", "", { isSecret: true })
+    await this.env.sync();
+}
+```
+
 ## Example: Root Module Implementation
 
 ```typescript

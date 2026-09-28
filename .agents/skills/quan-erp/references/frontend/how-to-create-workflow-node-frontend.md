@@ -30,12 +30,13 @@ For simple standard nodes (without custom handles), you can utilize the `createD
 ```tsx
 import { AlarmClock } from "@icon-park/react";
 import metadata from '../../../module.metadata.json' with { type: 'json' }
+// metadata.name === "my-plugin"
 import { createDefaultWorkflowNodeComponent } from "@quan-erp/base-frontend";
 
-export const OnBookingWorkflowNode = createDefaultWorkflowNodeComponent(
+export const MyTriggerWorkflowNode = createDefaultWorkflowNodeComponent(
     {
         defaultIcon: <AlarmClock size={20} />,
-        defaultLabel: 'On Hotel booking',
+        defaultLabel: 'On My Item Created',
         pluginName: metadata.name,
         defaultIconBg: 'bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400',
         hasOutput: true,
@@ -46,7 +47,7 @@ export const OnBookingWorkflowNode = createDefaultWorkflowNodeComponent(
 
 ## 3. Advanced Node Implementation
 
-For nodes that require custom styling, multiple input/output handles, or dynamic rendering based on connections (like the AI nodes), use the `WorkflowNode` component wrapper.
+For nodes that require custom styling, multiple input/output handles, or dynamic rendering based on connections, use the `WorkflowNode` component wrapper.
 
 ### Important: Imports
 `WorkflowNode` MUST be imported from `@quan-erp/base-frontend`. 
@@ -59,9 +60,10 @@ import React from 'react';
 import { Handle, Position } from "@xyflow/react";
 import { Tool } from "@icon-park/react";
 import { WorkflowNode } from "@quan-erp/base-frontend";
+import metadata from '../../../module.metadata.json' with { type: 'json' }
+// metadata.name === "my-plugin"
 
-// Note: Replace with your actual defination types
-export type CustomNodeData = {
+export type MyNodeData = {
     defination?: any;
     label?: string;
     subLabel?: string;
@@ -70,15 +72,15 @@ export type CustomNodeData = {
     values?: any;
 };
 
-export const CustomNode = ({ id, data, selected }: { id: string; data: CustomNodeData; selected?: boolean }) => {
+export const MyWorkflowNode = ({ id, data, selected }: { id: string; data: MyNodeData; selected?: boolean }) => {
     return (
         <WorkflowNode
-            pluginName="your-plugin-name"
+            pluginName={metadata.name}
             id={id}
             data={data}
             selected={selected}
             defaultIcon={<Tool size={18} theme="outline" />}
-            defaultLabel="Custom Tool"
+            defaultLabel="My Node"
             defaultIconBg="!w-9 !h-9 !rounded-full bg-yellow-50 dark:bg-yellow-950/40 text-yellow-600 dark:text-yellow-400 shadow-sm !text-lg"
             className={`!rounded-full w-[7rem] aspect-square p-3 gap-1 ${
                 selected
@@ -112,12 +114,14 @@ Plugins must register their custom nodes dynamically when the plugin initializes
 
 ```tsx
 import { workflowGenericOnLoad, workflowGenericOnSave, workflowNodes } from "@quan-erp/base-frontend";
-import { OnBookingWorkflowNode } from "./workflow/OnBooking.workflow-node.js";
+import { MyWorkflowNode } from "./workflow/my.workflow-node.js";
+import metadata from "../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
 // Inside your Plugin initialization / setup function:
 workflowNodes().push({
-    type: 'hotel-management/bookings', // Must match the `type` returned by the backend `getDefination()`
-    element: OnBookingWorkflowNode,
+    type: `${metadata.name}/my-node`, // Must match the `type` returned by the backend `getDefination()`
+    element: MyWorkflowNode,
     onSave: workflowGenericOnSave(),
     onLoad: workflowGenericOnLoad()
 });

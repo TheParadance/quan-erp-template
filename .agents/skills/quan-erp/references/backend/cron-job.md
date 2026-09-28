@@ -3,9 +3,9 @@
 This document explains how to schedule background work from a plugin using `@quan-erp/shared-backend-core`.
 
 > [!IMPORTANT]
-> **Always prefer the Redis cron job path:** built-in **`CronJobService`** (BullMQ + Redis + Postgres). This is the default for every new schedule — domain sweeps, reminders, reconciles, maturity checks, etc.
+> **Always prefer the Redis cron job path:** built-in **`CronJobService`** (BullMQ + Redis + Postgres). This is the default for every new schedule.
 >
-> Do **not** use the `@CronJob` method decorator for new plugin work unless the user explicitly asks for an in-process-only tick. Do **not** depend on `@quan-erp-plugins/cron-schedular-backend` — the same Redis APIs live in core as `CronJobService`.
+> Do **not** use the `@CronJob` method decorator for new plugin work unless the user explicitly asks for an in-process-only tick.
 
 ## Default: Redis cron (`CronJobService`)
 
@@ -24,7 +24,7 @@ Jobs are enqueued through **BullMQ on Redis**, with schedule metadata persisted 
 
 ## 1. Injection
 
-`CronJobService` is a built-in core service. Inject it with `ContainerRegistryManager.BUILTIN_PLUGIN` (same pattern as `NotificationService`).
+`CronJobService` is a platform built-in. Inject it with `ContainerRegistryManager.BUILTIN_PLUGIN` (same pattern as other built-in services).
 
 ```typescript
 import {
@@ -35,9 +35,10 @@ import {
     OnAllModuleLoaded,
 } from "@quan-erp/shared-backend-core";
 import metadata from "../../../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
 @Service()
-export class MaturedSweepService {
+export class MyCronJobService {
     @Inject(CronJobService, ContainerRegistryManager.BUILTIN_PLUGIN)
     private cronJobService: CronJobService;
 }
@@ -50,16 +51,16 @@ export class MaturedSweepService {
 Call `register` with a unique `(pluginName, jobName)` pair. Use `metadata.name` as `pluginName`.
 
 ```typescript
-async ensureDailySweepJob() {
+async ensureMyCronJob() {
     await this.cronJobService.register({
         cronExpression: "0 2 * * *", // every day at 02:00
         pluginName: metadata.name,
-        jobName: "matured-daily-sweep",
+        jobName: "my-cron-job",
         status: "active",
         startDate: new Date(), // optional: delay until this time before first run
         data: {
             // optional payload available on the BullMQ job as job.data
-            reason: "daily-sweep",
+            reason: "my-cron-job",
         },
         retry: {
             attempt: 3,
@@ -71,7 +72,7 @@ async ensureDailySweepJob() {
         },
         // optional: register listener in the same call (in-memory only)
         callback: async (job) => {
-            await this.runSweep(job.data);
+            await this.runMyCronJob(job.data);
         },
     });
 }
@@ -83,7 +84,7 @@ async ensureDailySweepJob() {
 
 ## 3. Attach / re-attach listeners after restart
 
-Schedules are reloaded from Postgres into Redis/BullMQ on core startup. **Callbacks are not persisted** — they live only in the process memory of `CronJobService`.
+Schedules are reloaded from Postgres into Redis/BullMQ on platform startup. **Callbacks are not persisted** — they live only in the process memory of `CronJobService`.
 
 Always re-register listeners on `@OnAllModuleLoaded` (or pass `callback` again via `register` after boot):
 
@@ -92,9 +93,9 @@ Always re-register listeners on `@OnAllModuleLoaded` (or pass `callback` again v
 async onAllModuleLoaded() {
     this.cronJobService.addEventListener(
         metadata.name,
-        "matured-daily-sweep",
+        "my-cron-job",
         async (job) => {
-            await this.runSweep(job.data);
+            await this.runMyCronJob(job.data);
         },
     );
 }
@@ -111,10 +112,10 @@ async onAllModuleLoaded() {
 
 ```typescript
 // Pause Redis scheduler + mark inactive (can be re-activated via updateCronJobStatus)
-await this.cronJobService.stop(metadata.name, "matured-daily-sweep");
+await this.cronJobService.stop(metadata.name, "my-cron-job");
 
 // Delete Redis scheduler + DB row + drop matching listeners
-await this.cronJobService.remove(metadata.name, "matured-daily-sweep");
+await this.cronJobService.remove(metadata.name, "my-cron-job");
 
 // Bulk helpers
 await this.cronJobService.stopAllByPluginName(metadata.name);
@@ -128,7 +129,7 @@ await this.cronJobService.removeAllByPluginName(metadata.name);
 ```typescript
 const job = await this.cronJobService.getByPluginNameWithJobName(
     metadata.name,
-    "matured-daily-sweep",
+    "my-cron-job",
 );
 
 const jobs = await this.cronJobService.getByPluginName({
@@ -159,7 +160,7 @@ const jobs = await this.cronJobService.getByPluginName({
 
 ### HTTP surface (admin / tooling)
 
-Core also exposes authenticated routes under `/cron-jobs` (`CronJobController`). Plugin code should call `CronJobService` directly rather than HTTP.
+Platform routes under `/cron-jobs` (`CronJobController`) exist for tooling. Plugin code should call `CronJobService` directly rather than HTTP.
 
 ---
 
@@ -169,7 +170,7 @@ Core also exposes authenticated routes under `/cron-jobs` (`CronJobController`).
 2. On `@OnAllModuleLoaded` (and/or feature setup), call `register({ pluginName: metadata.name, jobName, cronExpression, ... })` so the Redis schedule exists.
 3. Ensure a listener is attached every boot (`callback` on `register` and/or `addEventListener`) — schedules survive restart; handlers do not.
 4. On uninstall / disable, call `stop` or `remove` (avoid orphan Redis schedulers).
-5. Keep `jobName` stable and namespaced (e.g. `matured-daily-sweep`) so upserts update the same job.
+5. Keep `jobName` stable and namespaced (e.g. `my-cron-job`) so upserts update the same job.
 
 ### Minimal end-to-end example
 
@@ -182,11 +183,12 @@ import {
     OnAllModuleLoaded,
 } from "@quan-erp/shared-backend-core";
 import metadata from "../../../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
-const JOB_NAME = "inventory-nightly-reconcile";
+const MY_CRON_JOB_NAME = "my-cron-job";
 
 @Service()
-export class InventoryReconcileCronService {
+export class MyCronJobService {
     @Inject(CronJobService, ContainerRegistryManager.BUILTIN_PLUGIN)
     private cronJobService: CronJobService;
 
@@ -195,21 +197,21 @@ export class InventoryReconcileCronService {
         await this.cronJobService.register({
             cronExpression: "0 3 * * *",
             pluginName: metadata.name,
-            jobName: JOB_NAME,
+            jobName: MY_CRON_JOB_NAME,
             startDate: new Date(),
             callback: async () => {
-                await this.reconcile();
+                await this.runMyCronJob();
             },
         });
     }
 
-    private async reconcile() {
+    private async runMyCronJob() {
         // domain work
     }
 }
 ```
 
-Register the service in your plugin root `@Module({ services: [...] })` like any other backend service.
+Register the service in your plugin root `@Module({ providers: [...] })` like any other backend service.
 
 ---
 
@@ -221,9 +223,9 @@ Only if the user explicitly wants a process-local tick with no Redis queue:
 import { Service, CronJob } from "@quan-erp/shared-backend-core";
 
 @Service()
-export class LocalHousekeepingService {
-    @CronJob({ expression: "0 * * * *", name: "HourlyLocalCleanup" })
-    async cleanup() {
+export class MyLocalCronJobService {
+    @CronJob({ expression: "0 * * * *", name: "MyHourlyCronJob" })
+    async runMyCronJob() {
         // runs every hour on this process only — not shared via Redis
     }
 }

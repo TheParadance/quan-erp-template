@@ -16,11 +16,11 @@ The Quan ERP modular architecture allows plugins to depend on each other. To mak
 Create or update the `backend/src/export.ts` file in your plugin. This file serves as the public API definition for your plugin. Anything exported here will be available to other plugins.
 
 ```typescript
-// Example: plugins/fleet-management/backend/src/export.ts
+// Example: plugins/my-plugin/backend/src/export.ts
 
-export * from './feature/driver/driver.service.js';
-export * from './feature/driver/driver.controller.js';
-export * from './schema/driver/driver.entity.js';
+export * from './feature/item/item.service.js';
+export * from './feature/item/item.controller.js';
+export * from './schema/my-item.entity.js';
 ```
 
 ---
@@ -47,7 +47,7 @@ npm run release:beta
 
 ## 3. Consuming an Exported Service
 
-To use a service from another plugin (e.g., using `FleetDriverManagementService` from `fleet-management` in your plugin):
+To use a service from another plugin (e.g., using `MyItemService` from `my-plugin` in your plugin):
 
 ### A. Install the Dependency
 Add the published plugin package to your plugin's `backend/package.json`.
@@ -56,7 +56,7 @@ Add the published plugin package to your plugin's `backend/package.json`.
 > **AI Agent Role**: If you are an AI agent tasked with using services from another plugin, you MUST install the corresponding package `@quan-erp-plugins/<plugin-name>-backend` in the consumer plugin's `backend` directory. If only the backend services are needed, you only need to install the backend package.
 
 ```bash
-npm install @quan-erp-plugins/fleet-management-backend
+npm install @quan-erp-plugins/my-plugin-backend
 ```
 
 ### B. Inject the Service
@@ -64,15 +64,15 @@ Use the `@Inject` decorator with the target plugin's name as the second argument
 
 ```typescript
 import { Service, Inject } from "@quan-erp/shared-backend-core";
-import { FleetDriverManagementService } from "@quan-erp-plugins/fleet-management-backend";
+import { MyItemService } from "@quan-erp-plugins/my-plugin-backend";
 
 @Service()
 export class MyService {
-    @Inject(FleetDriverManagementService, "fleet-management")
-    driverService: FleetDriverManagementService;
+    @Inject(MyItemService, "my-plugin")
+    myItemService: MyItemService;
 
     async doSomething() {
-        const drivers = await this.driverService.list();
+        const items = await this.myItemService.list();
         // ...
     }
 }

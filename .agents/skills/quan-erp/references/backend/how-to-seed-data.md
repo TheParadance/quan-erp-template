@@ -21,7 +21,7 @@ The standard pattern involves:
 
 ### Example Implementation
 
-Here is an example based on the `AccountingModule`:
+Here is an example based on plugin `my-plugin`:
 
 ```typescript
 import {
@@ -37,8 +37,9 @@ import {
 } from "@quan-erp/shared-backend-core";
 import { DataSource } from "typeorm";
 import metadata from "../../../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 import { SCHEMA_LIST, SERVICE_LIST, CONTROLLER_LIST } from "../const/app-config.js";
-import { DEVELOPER_CONFIG } from "../const/developer-config.js";
+import { MyItemEntity } from "../schema/my-item.entity.js";
 
 @Module({
   name: metadata.name,
@@ -46,7 +47,7 @@ import { DEVELOPER_CONFIG } from "../const/developer-config.js";
   controllers: CONTROLLER_LIST,
   entities: [{ plugin: "default", entities: SCHEMA_LIST }],
 })
-export class AccountingModule {
+export class MyModule {
   @InjectDatabaseSource(ContainerRegistryManager.DEFAULT_PLUGIN)
   dataSource: DataSource;
 
@@ -69,7 +70,7 @@ export class AccountingModule {
     );
 
     if (isExists) {
-        this.logger.log(`Accounting seeding skipped (already initialized)`);
+        this.logger.log(`MyPlugin seeding skipped (already initialized)`);
         return;
     }
 
@@ -92,13 +93,13 @@ export class AccountingModule {
         manager,
       });
 
-      // 4. Seed Entities (Example: Accounting Book)
-      const bookRepo = manager.getRepository(AccountingBookEntity);
-      const primaryBookData = {
-        name: "Main Operating Book",
+      // 4. Seed Entities (Example: MyItem)
+      const itemRepo = manager.getRepository(MyItemEntity);
+      const primaryItemData = {
+        name: "Default Item",
         isActive: true,
       };
-      await bookRepo.upsert(primaryBookData, ["name"]);
+      await itemRepo.upsert(primaryItemData, ["name"]);
 
       // 5. Record Seeding Success
       await this.dataSeedHistoryService.add({
@@ -109,7 +110,7 @@ export class AccountingModule {
         },
       });
 
-      this.logger.log("Accounting module seeded successfully");
+      this.logger.log("MyPlugin module seeded successfully");
     });
   }
 }
@@ -130,13 +131,13 @@ import {
 } from "@quan-erp/shared-backend-core";
 import { DataSource, In } from "typeorm";
 import metadata from "../../../module.metadata.json" with { type: "json" };
-import { PaymentMethodEntity } from "../entities/payment-method.entity.js";
+import { MyItemEntity } from "../schema/my-item.entity.js";
 
 @Module({
   name: metadata.name,
-  entities: [{ plugin: "default", entities: [PaymentMethodEntity] }],
+  entities: [{ plugin: "default", entities: [MyItemEntity] }],
 })
-export class PaymentMethodModule {
+export class MyModule {
   @InjectDatabaseSource(ContainerRegistryManager.DEFAULT_PLUGIN)
   source: DataSource;
 
@@ -145,38 +146,36 @@ export class PaymentMethodModule {
 
   @OnInit()
   async init() {
-    this.logger.log("====== Seeding Payment Methods ======");
+    this.logger.log("====== Seeding My Items ======");
 
-    const repo = this.source.getRepository(PaymentMethodEntity);
+    const repo = this.source.getRepository(MyItemEntity);
 
-    const payments = [
-      { id: 1, name: 'Cash' },
-      { id: 2, name: 'KBZPay' },
-      { id: 3, name: 'AYAPay' },
-      { id: 4, name: 'CBPay' },
-      { id: 5, name: 'A+' }
+    const items = [
+      { id: 1, name: 'Item A' },
+      { id: 2, name: 'Item B' },
+      { id: 3, name: 'Item C' },
     ];
 
     // Find existing records by a unique property
-    const existingPayments = await repo.find({
-      where: { name: In(payments.map(p => p.name)) }
+    const existingItems = await repo.find({
+      where: { name: In(items.map(p => p.name)) }
     });
 
-    const existingNames = new Set(existingPayments.map(p => p.name));
+    const existingNames = new Set(existingItems.map(p => p.name));
 
     // Filter out items that already exist
-    const missingPayments = payments
+    const missingItems = items
       .filter(p => !existingNames.has(p.name))
       .map(p => repo.create(p));
 
-    if (missingPayments.length > 0) {
-      await repo.insert(missingPayments);
-      this.logger.log(`Seeded ${missingPayments.length} payment method(s)`);
+    if (missingItems.length > 0) {
+      await repo.insert(missingItems);
+      this.logger.log(`Seeded ${missingItems.length} item(s)`);
     } else {
-      this.logger.log("All payment methods already exist");
+      this.logger.log("All items already exist");
     }
 
-    this.logger.log("====== Seed Payment Methods Complete ======");
+    this.logger.log("====== Seed My Items Complete ======");
   }
 }
 ```
@@ -187,4 +186,4 @@ export class PaymentMethodModule {
 - **Idempotency**: Use `upsert` or check for existence before creating records to avoid unique constraint violations if the history check fails for some reason.
 - **Version Awareness**: Use `metadata.pluginVersion` when checking and adding seed history. This allows you to run new seeding logic for new versions of the plugin.
 - **Clean Logs**: Use `InjectBuiltinLogger` to provide clear feedback during the system startup process.
-- **Isolate Logic**: If the seeding logic is complex, move it to a dedicated `SeedService` and call it from the module's `init()` method.
+- **Isolate Logic**: If the seeding logic is complex, move it to a dedicated `MySeedService` and call it from the module's `init()` method.

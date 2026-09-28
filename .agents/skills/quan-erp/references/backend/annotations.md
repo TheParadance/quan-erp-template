@@ -14,7 +14,7 @@ Marks a class as a service that can be injected into other components.
 
 ```typescript
 @Service()
-export class LocationService { ... }
+export class MyService { ... }
 ```
 
 ### `@InjectLogger(LoggerClass)`
@@ -54,31 +54,51 @@ private registerQueue() {
 }
 ```
 
+### `@InjectEnv()`
+Injects the **plugin-scoped** `Env` for the current plugin (not `process.env`, and not another plugin’s env).
+
+> [!IMPORTANT]
+> **Env isolation:** Keys are partitioned by plugin name. Plugin A cannot read Plugin B’s (or `builtin` / base) env via `@InjectEnv()`. If a service calls `this.env.get("SOME_KEY")`, that key MUST be registered on **this** plugin — typically in the root module `@OnInit` with `this.env.set(...)` when missing, then `await this.env.sync()`.
+
+```typescript
+@Service()
+export class MyService {
+    @InjectEnv()
+    env: Env;
+
+    getBucket() {
+        return this.env.get("S3_BUCKET"); // only this plugin's S3_BUCKET
+    }
+}
+```
+
+Cross-plugin **beans** (e.g. `@Inject(S3Client, "storage")`) can still be injected from another plugin scope; only the **Env bag** is isolated.
+
 ### `@InjectDatabaseSource(sourceName: string)`
 Injects a TypeORM `DataSource` into a service. 
 
 - **Type**: The injected object is of type `DataSource` from the `typeorm` package.
 - **Source Names**: 
-    - `DataSourceManager.DEFAULT_PLUGIN`: Refers to the primary datasource created by the Quan ERP core system during startup.
+    - `DataSourceManager.DEFAULT_PLUGIN`: Refers to the primary datasource created during platform startup.
     - **String (Plugin Name)**: Passing a string matching another plugin's name will inject the datasource associated with that specific plugin.
 
 ```typescript
 import { DataSource } from "typeorm";
 import { InjectDatabaseSource, DataSourceManager } from "@quan-erp/shared-backend-core";
 
-// Injects the default core datasource
+// Injects the primary platform datasource
 @InjectDatabaseSource(DataSourceManager.DEFAULT_PLUGIN)
 source: DataSource;
 
-// Injects a datasource from another plugin (e.g., "plugin-a")
-@InjectDatabaseSource("plugin-a")
-pluginSource: DataSource;
+// Injects a datasource from another plugin (e.g. "my-plugin")
+@InjectDatabaseSource("my-plugin")
+myPluginSource: DataSource;
 ```
 
 ## Module Configuration
 
 ### `@Module(metadata: ModuleMetadata)`
-The core decorator used to define a plugin's backend module. It registers providers (services), controllers, and database entities.
+The decorator used to define a plugin's backend module. It registers providers (services), controllers, and database entities.
 
 ```typescript
 @Module({
@@ -86,7 +106,7 @@ The core decorator used to define a plugin's backend module. It registers provid
     providers: [MyService],
     controllers: [MyController],
     entities: [{ plugin: 'default', entities: [MyEntity] }],
-    websocket: [ChatWebsocket], // Register WebSocket classes here
+    websocket: [MyWebsocket], // Register WebSocket classes here
 })
 export class MyModule { }
 ```
@@ -127,7 +147,7 @@ export interface RedisCacheOption {
     type: 'in-memory',
     checkperiod: 1000,
 })
-export class FleetManagementModule { ... }
+export class MyModule { ... }
 ```
 
 ### `@OnInit()`
@@ -183,16 +203,16 @@ import {
 @Websocket({
     ssl: false,
     pingpongInterval: 1000,
-    path: '/chat-websocket',
+    path: '/my-websocket',
 })
-export class ChatWebsocket implements IWebsocket {
-    @InjectWebsocketServer('/chat-websocket')
+export class MyWebsocket implements IWebsocket {
+    @InjectWebsocketServer('/my-websocket')
     websocket: WebsocketServer;
 
     on(event: WebsocketEvents, client: WebsocketClient, data: any, isBinary: boolean): void {
         // Handle incoming messages
         new WebsocketMessageHandler(event, data, isBinary)
-            .onTextEvent('chat-room', (payload) => {
+            .onTextEvent('my-room', (payload) => {
                 // Logic for specific event
             })
             .execute();
@@ -216,14 +236,31 @@ export class ChatWebsocket implements IWebsocket {
 ### `@Controller(path: string)`
 Defines a class as a controller and sets the base route path for all endpoints within it.
 
-> [!NOTE]
-> The final URL path will be automatically prefixed with the plugin name as defined in `module.metadata.json`.
-> 
-> **Example**: If `<plugin-name>` is `inventory` and the controller is `@Controller("/location")`, the full API path will be: `backend.com/inventory/location`
+> [!IMPORTANT]
+> **Never** put `metadata.name` (or a hard-coded plugin name) in `@Controller(...)`.
+> The core framework **automatically** mounts every controller under `/{metadata.name}` from `module.metadata.json`. The decorator argument is the **resource path only**.
+>
+> | | Backend | Frontend (full URL) |
+> |---|---|---|
+> | Correct | `@Controller("/item")` | `/my-plugin/item` |
+> | Wrong | `@Controller(\`/${metadata.name}/item\`)` | doubles to `/my-plugin/my-plugin/item` |
+> | Wrong | `@Controller("/my-plugin/item")` | same double-prefix problem |
+>
+> ```typescript
+> // BAD — never do this
+> @Controller(`/${metadata.name}/item`)
+> @Controller("/my-plugin/item")
+>
+> // GOOD — framework adds /my-plugin → clients call /my-plugin/item
+> @Controller("/item")
+> export class MyController { ... }
+> ```
+>
+> Frontend `withApiMetadataFetchFn` / axios paths **do** include the plugin prefix (`/${metadata.name}/item`) so they match the full mounted URL. See [Call Backend API](../frontend/call-backend-api.md).
 
 ```typescript
-@Controller("/location")
-export class LocationController { ... }
+@Controller("/item")
+export class MyController { ... }
 ```
 
 ### `@Inject(service: any, plugin?: string)`
@@ -231,12 +268,12 @@ Injects a service dependency. By default, it looks for the service within the cu
 
 ```typescript
 // Injects a service from the current plugin
-@Inject(LocationService)
-service: LocationService;
+@Inject(MyService)
+service: MyService;
 
-// Injects a service from another plugin (e.g., "plugin-a")
-@Inject(LocationService, "plugin-a")
-service: LocationService;
+// Injects a service from another plugin (e.g. "other-plugin")
+@Inject(MyOtherService, "other-plugin")
+otherService: MyOtherService;
 ```
 
 #### Circular service injection (ESM TDZ)
@@ -253,21 +290,21 @@ The DI resolver already supports a **lazy class ref**: `@Inject(() => SomeServic
 
 ```typescript
 import { Inject, Service } from "@quan-erp/shared-backend-core";
-import { UserService } from "../../core-features/user/user.service.js";
+import { MyOtherService } from "../other/my-other.service.js";
 
 @Service()
-export class ChangeLogService {
+export class MyService {
   // Lazy resolve + InstanceType so design:type is void 0 / Object (not the class)
-  @Inject(() => UserService)
-  userService: InstanceType<typeof UserService>;
+  @Inject(() => MyOtherService)
+  otherService: InstanceType<typeof MyOtherService>;
 }
 ```
 
 And on the other side:
 
 ```typescript
-@Inject(() => ChangeLogService)
-changeLogService: InstanceType<typeof ChangeLogService>;
+@Inject(() => MyService)
+myService: InstanceType<typeof MyService>;
 ```
 
 | Do | Don't |
@@ -276,7 +313,7 @@ changeLogService: InstanceType<typeof ChangeLogService>;
 | `prop: InstanceType<typeof OtherService>` | `prop: OtherService` (emits `design:type` class → TDZ) |
 | Prefer breaking the cycle (one side queries entity / moves call up) when possible | Import package root `@quan-erp/shared-backend-core` from inside `shared-backend-core` itself (re-enters full barrels) |
 
-Canonical example: `ChangeLogService` ↔ `UserService`.
+Canonical example: `MyService` ↔ `MyOtherService`.
 
 ## Route Decorators
 
@@ -311,11 +348,11 @@ Automatically logs the action to the audit trail. It can take a static string or
 
 ```typescript
 // Static string
-@AuditLogMiddleware('View all branches')
+@AuditLogMiddleware('View all items')
 
 // Dynamic callback
 @AuthenticatedUserOnly()
-@AuditLogMiddleware((req) => `Create new branch: ${req.body.payload.name}`)
+@AuditLogMiddleware((req) => `Create new item: ${req.body.payload.name}`)
 ```
 
 ## API Documentation
@@ -337,7 +374,7 @@ Provides comprehensive metadata for the API, used for documentation and system i
 
 ```typescript
 @APIInfo({
-    shortDescription: 'Get all branches',
+    shortDescription: 'Get all items',
     contentType: JsonContentType,
     responseDto: ResponseDto,
     queryParams: SkipLimitQueryParam,
@@ -352,8 +389,8 @@ Defines an API endpoint as an entry point for a system workflow, allowing it to 
 
 ```typescript
 @WorkflowEntry({
-    name: "get-branch",
-    description: "get all branches",
+    name: "get-item",
+    description: "get all items",
     returnType: {
         type: 'object',
         properties: {
@@ -387,7 +424,7 @@ Caches the response of an endpoint based on a generated key.
 
 ```typescript
 @CacheRoute({
-    key: (req) => `branch-${req.query.skip}-${req.query.limit}`,
+    key: (req) => `my-item-${req.query.skip}-${req.query.limit}`,
     plugin: 'default',
     name: 'publisher'
 })
@@ -398,14 +435,14 @@ Invalidates specific cache keys, typically used after POST, PUT, or DELETE opera
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `key` | `string \| callback` | The cache key string (supports wildcards) or a function returning an **array of strings** (`string[]`). |
+| `key` | `string \| callback` | The cache key string (trailing `*` wildcards only) or a function returning an **array of strings** (`string[]`). |
 | `plugin` | `string` | The plugin owner of the cache (usually 'default'). |
 | `name` | `string` | The cache client identifier (e.g., 'publisher'). |
 
 ```typescript
 import { Request as ExpressRequest } from 'express'
 @DeleteCacheRoute({
-    key: (req: ExpressRequest) => [`branch-${(req as any).user.payload.id}`], // Must return an array
+    key: (req: ExpressRequest) => [`my-item-${(req as any).user.payload.id}`], // Must return an array
     plugin: 'default',
     name: 'publisher'
 })
@@ -415,6 +452,21 @@ import { Request as ExpressRequest } from 'express'
 
 These annotations are used within services to cache and invalidate raw data or complex calculation results.
 
+### Cache key conventions
+
+1. **Define shared key constants** in your plugin (e.g. `src/utilities/cache-keys.ts`) instead of scattering string prefixes:
+   ```typescript
+   export const MY_CACHE_KEYS = buildCacheKeys({
+     ITEM_LIST: "my-item-list",
+     ITEM_DETAIL: "my-item",
+   });
+   ```
+2. **Add new keys** to that `buildCacheKeys({...})` object — do not hardcode prefixes at call sites.
+3. **Wildcard rule:** only a **trailing** `*` is supported (e.g. `` `${MY_CACHE_KEYS.ITEM_DETAIL}-${itemId}*` ``).  
+   `*` in the **middle** (e.g. `` `${MY_CACHE_KEYS.ITEM_DETAIL}-*-${userId}` ``) is **not** supported.
+4. **Key segment order for invalidation:** put the dimension you delete by **before** per-request suffixes.  
+   Example: cache as `` `${MY_CACHE_KEYS.ITEM_DETAIL}-${itemId}-${branchId}` `` so remove can clear `` `${MY_CACHE_KEYS.ITEM_DETAIL}-${itemId}*` `` for all branches.
+
 ### `@CacheFn(options: CacheFnOptions)`
 Caches the result of a service method.
 
@@ -423,26 +475,34 @@ Caches the result of a service method.
 | `key` | `callback` | A function that takes method arguments and returns a cache key string. |
 | `plugin` | `string` | The plugin owner of the cache. |
 | `name` | `string` | The cache client identifier. |
+| `ttl` | `number` | Optional TTL in milliseconds. |
 
 ```typescript
+import { MY_CACHE_KEYS } from "../utilities/cache-keys.js";
+
 @CacheFn({
-    plugin: CacheManager.DEFAULT_PLUGIN,
+    plugin: 'default',
     name: 'publisher',
-    key: (skip: number, limit: number) => `active-jobs-${skip}-${limit}`
+    key: (itemId: number, branchId: number) =>
+        `${MY_CACHE_KEYS.ITEM_DETAIL}-${itemId}-${branchId}`,
+    ttl: 60 * 60 * 24 * 30,
 })
-async getActiveJobs(skip: number, limit: number) { ... }
+async getItemDetail(itemId: number, branchId: number) { ... }
 ```
 
-### `@DeleteCacheFn(options: CacheFnOptions)`
-Invalidates specific cache keys when the decorated method is successfully executed.
+### `@DeleteCacheFn(options: DeleteCacheOptions)`
+Invalidates specific cache keys when the decorated method is successfully executed. `key` must return a **`string[]`**.
 
 ```typescript
 @DeleteCacheFn({
-    plugin: CacheManager.DEFAULT_PLUGIN,
+    plugin: 'default',
     name: 'publisher',
-    key: (dto: CreateJobDTO) => [`active-jobs-*`] // Returns an array of keys/wildcards
+    // trailing * only — clear all branch entries for this item
+    key: (itemId: number) => {
+        return [`${MY_CACHE_KEYS.ITEM_DETAIL}-${itemId}*`]
+    },
 })
-async register(dto: CreateJobDTO) { ... }
+async removeItem(itemId: number) { ... }
 ```
 
 ## AI Integration
@@ -458,18 +518,18 @@ Marks a service method as a tool that can be discovered and executed by the AI a
 
 ```typescript
 @AITool({
-    requiredApiPermission: [{ method: 'get', url: '/exchange-rate/' }],
-    argParser: (args) => [args.fromId, args.toId],
+    requiredApiPermission: [{ method: 'get', url: '/my-plugin/item/' }],
+    argParser: (args) => [args.itemId],
     toolDetail: {
         type: 'function',
         function: {
-            name: "get-rate",
-            description: "Get exchange rates",
+            name: "get-item",
+            description: "Get an item by id",
             parameters: { ... }
         }
     }
 })
-async getRate(fromId: number, toId: number) { ... }
+async getItem(itemId: number) { ... }
 ```
 
 ## Parameter Injection
@@ -491,7 +551,7 @@ Injects the currently authenticated user information.
 ```typescript
 async update(
     @Param("id") id: number, 
-    @Body() body: RequestDto<UpdateLocationDto>, 
+    @Body() body: RequestDto<UpdateMyItemDto>, 
     @User() user: RequestedUser
 ) { ... }
 ```

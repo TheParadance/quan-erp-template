@@ -9,8 +9,9 @@ To add reports, use the `AppRegistry.report.add` method within your plugin's `re
 ### Basic Structure
 
 ```tsx
+// metadata.name === "my-plugin"
 AppRegistry.report.add({
-  page: <MyModuleReports />,
+  page: <MyReports />,
   pluginName: metadata.name,
 });
 ```
@@ -24,14 +25,25 @@ Since reports often contain multiple sub-pages, it is best practice to create a 
 Use the following pattern in your `report/index.tsx` to provide a premium user experience:
 
 ```tsx
-export function MyModuleReports() {
-    const translation = useLocaleTranslation(ModuleLocale);
+export function MyReports() {
+    const translation = useLocaleTranslation(MyLocale);
     const navigate = useNavigate();
+
+    const reportList = [
+        {
+            id: "my-item-summary",
+            name: translation.get("myItemSummary", "My Item Summary"),
+            description: translation.get("myItemSummaryDesc", "Summary of my items"),
+            path: "item-summary",
+            icon: <MyIcon />,
+            element: <MyItemSummaryReport />,
+        },
+    ];
 
     const ReportHub = () => (
         <Page pluginName={metadata.name}>
             <PageTitle>
-                <span>{translation.get("moduleReports", "Module Reports")}</span>
+                <span>{translation.get("myReports", "My Reports")}</span>
             </PageTitle>
             <PageContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
@@ -82,13 +94,13 @@ Example import:
 import { DataTable } from "../../components/DataTable";
 ```
 
-If your plugin doesn't have one, you should implement it locally using `@quan-erp/shared-ui`'s base `Table` components or copy it from another plugin like `hr`.
+If your plugin doesn't have one, implement it locally using `@quan-erp/shared-ui`'s base `Table` components.
 
 ### 3. Routing
 Always use `<Routes>` and `<Route>` from `react-router-dom` to ensure deep-linking works correctly. 
 
 > [!IMPORTANT]
-> **Sub-paths should NOT start with a leading slash `/`**. They must be relative to the parent report route (e.g., use `employees` instead of `/employees`).
+> **Sub-paths should NOT start with a leading slash `/`**. They must be relative to the parent report route (e.g., use `item-summary` instead of `/item-summary`).
 
 ## Best Practices
 

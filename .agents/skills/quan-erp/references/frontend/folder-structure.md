@@ -4,7 +4,7 @@ This document describes the standard folder structure for the frontend of a Quan
 
 ## Directory Layout
 
-The frontend code is located in `plugins/<plugin-name>/frontend/`.
+The frontend code is located in `plugins/<plugin-name>/frontend/` (e.g. `plugins/my-plugin/frontend/`).
 
 ```text
 frontend/
@@ -45,10 +45,10 @@ frontend/
 Contains static assets that are served directly by the browser, such as icons, images, or configuration files that don't need to be bundled by Vite.
 
 ### `src/page/`
-UI logic is organized by feature. Page folders should contain presentation components, page state, and UI-only types. Do not place backend API calls directly in page folders. An `index.tsx` file is often used as the entry point for a page module.
+UI logic is organized by feature (e.g. `item/`). Page folders should contain presentation components, page state, and UI-only types. Do not place backend API calls directly in page folders. An `index.tsx` file is often used as the entry point for a page module.
 
 ### `src/api/`
-Backend communication is organized by domain. Each API-backed domain must follow the React Query API declaration standard:
+Backend communication is organized by domain (e.g. `item/`). Each API-backed domain must follow the React Query API declaration standard:
 - **`*.api.ts`**: Raw Axios calls wrapped with `withApiMetadataFetchFn` from `@quan-erp/shared-types`.
 - **`*.queries.ts` / `*.mutations.ts`**: React Query hooks that consume API object `.fetchFn` methods.
 - **`*.types.ts`**: Payload, response, and DTO types shared by API hooks and UI components.

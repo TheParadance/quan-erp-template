@@ -9,7 +9,7 @@ Every page component's return value should follow this hierarchy:
 ```tsx
 <Page pluginName={metadata.name} 
     navMenu={{
-        menuTitle: <PageNavTitle>Menu Title</PageNavTitle>,
+        menuTitle: <PageNavTitle>My Items</PageNavTitle>,
         leadingBackButton: true | false
     }}
     bottomNav={{
@@ -29,6 +29,7 @@ Every page component's return value should follow this hierarchy:
 
 > [!IMPORTANT]
 > **Dialogs under `PageContent`:** Always nest `<Dialog>`, `<Sheet>`, and similar overlays **inside** `<PageContent>`. Do not place them as siblings after `</PageContent>`.
+> **Outside `<PageContent>` the dialog will not work** — open/close and portal rendering break when the overlay sits as a sibling under `<Page>` only.
 
 ---
 
@@ -47,7 +48,7 @@ The root container that handles layout, navigation registration, and theme integ
 ### 2. `<PageTitle>`
 Defines the header area of the page. This area remains visible during scrolling in some layouts.
 - Use it to display the page title.
-- Place primary action buttons (e.g., "Add New", "Save") and compact page toolbars (search, filters, spot price) here for consistent positioning.
+- Place primary action buttons (e.g., "Create", "Save") and compact page toolbars (search, filters) here for consistent positioning.
 - Preferred title shell (no wrap on the trailing controls row):
 
 ```tsx
@@ -64,16 +65,28 @@ Defines the header area of the page. This area remains visible during scrolling 
 ### 3. `<PageContent>`
 The main container for the page logic and data display.
 - All primary UI elements (Tables, Cards, Forms) should be placed inside this component.
-- **Dialogs / sheets must be children of `<PageContent>`** — never siblings of `<PageContent>` under `<Page>`, and never only under `<PageTitle>`. Put `<Dialog>`, `<Sheet>`, and similar overlays at the end of `<PageContent>` (after the main content).
+- **Dialogs / sheets must be children of `<PageContent>`** — never siblings of `<PageContent>` under `<Page>`, and never only under `<PageTitle>`. Put `<Dialog>`, `<Sheet>`, `ResponsiveDialog`, and similar overlays at the end of `<PageContent>` (after the main content). **If placed outside `<PageContent>`, the dialog will not work.**
+- **Always pass `pluginName={metadata.name}`** on portaled content (`ResponsiveContent`, or `data-plugin` on `DialogContent` / `SheetContent`).
+- **`ResponsiveTitle` / `ResponsiveDescription` children must be wrapped in `<div>`** — never bare text.
+- **Long forms in `ResponsiveDialog`:** Use flex column + scrollable body (`min-h-0 flex-1 overflow-y-auto`) + sticky footer. Footer background must match overlay token — see [CSS Styling](./css-styling.md) (`bg-(--drawer-background)` / `md:bg-(--dialog-background)`).
 
 ```tsx
 <Page ...>
     <PageTitle>{/* ... */}</PageTitle>
     <PageContent>
         {/* Main Content, Tables, Lists, Forms */}
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent>{/* ... */}</DialogContent>
-        </Dialog>
+        <ResponsiveDialog open={open} onOpenChange={setOpen}>
+            <ResponsiveContent pluginName={metadata.name}>
+                <ResponsiveHeader>
+                    <ResponsiveTitle>
+                        <div>{translation.get("title", "Title")}</div>
+                    </ResponsiveTitle>
+                    <ResponsiveDescription>
+                        <div>{translation.get("description", "Description")}</div>
+                    </ResponsiveDescription>
+                </ResponsiveHeader>
+            </ResponsiveContent>
+        </ResponsiveDialog>
     </PageContent>
 </Page>
 ```
@@ -117,11 +130,12 @@ import {
 } from "@quan-erp/shared-ui";
 import { Plus } from "@icon-park/react";
 import { useItemsQuery } from "./api/items.api"; // Custom React Query hook
-import { MyPluginLocale } from "./locale"; // Localized dictionary
+import { MyLocale } from "./locale"; // Localized dictionary
 import metadata from "../../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
-export default function MyPluginPage() {
-    const translation = useLocaleTranslation(MyPluginLocale);
+export default function MyPage() {
+    const translation = useLocaleTranslation(MyLocale);
     const { data: items, refetch, isLoading, isError } = useItemsQuery();
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -131,7 +145,7 @@ export default function MyPluginPage() {
             navMenu={{
                 menuTitle: (
                     <PageNavTitle>
-                        {translation.get("management-title", "Management Title")}
+                        {translation.get("my-items-title", "My Items")}
                     </PageNavTitle>
                 ),
             }}
@@ -183,7 +197,7 @@ export default function MyPluginPage() {
                 </div>
 
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogContent>
+                    <DialogContent data-plugin={metadata.name}>
                         <DialogHeader>
                             <DialogTitle>{translation.get('new-action', 'Create New')}</DialogTitle>
                         </DialogHeader>
@@ -202,6 +216,7 @@ export default function MyPluginPage() {
 
 1.  **Mobile Awareness**: Use the `isMobile` hook or CSS utilities to adjust `<PageTitle>` content for smaller screens.
 2.  **Consistent Actions**: Always put your page's primary "CTA" (Call to Action) in the `<PageTitle>` section so users can easily find it on any page.
-3.  **Metadata Injection**: Always pass `metadata.name` to the `pluginName` prop to ensure the system correctly associates the page with its parent plugin.
-4.  **Dialogs under `PageContent`**: Every `<Dialog>`, `<Sheet>`, or equivalent overlay must be nested inside `<PageContent>`, not as a sibling under `<Page>`.
+3.  **Metadata Injection**: Always pass `metadata.name` to the `pluginName` prop on `<Page>` **and** on portaled dialog content (`ResponsiveContent` / `DialogContent` / `SheetContent`).
+4.  **Dialogs under `PageContent`**: Every `<Dialog>`, `<Sheet>`, `ResponsiveDialog`, or equivalent overlay must be nested inside `<PageContent>`, not as a sibling under `<Page>`. Outside `<PageContent>` the dialog will not work.
+5.  **Responsive title/description**: Wrap `<ResponsiveTitle>` / `<ResponsiveDescription>` children in a `<div>`.
 

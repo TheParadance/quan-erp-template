@@ -4,14 +4,16 @@ In a modular ERP system, not all pages should be visible in the mobile bottom na
 
 ## 1. Checking Visibility State
 
-Use the `useIsContainInBottomNavBar` hook from `base/frontend` to determine if the current page is one of the tabs configured by the user to appear in the bottom navigation bar.
+Use the `useIsContainInBottomNavBar` hook from `@quan-erp/base-frontend` to determine if the current page is one of the tabs configured by the user to appear in the bottom navigation bar.
 
 ```tsx
 import { useIsContainInBottomNavBar } from "@quan-erp/base-frontend";
+import metadata from '../../../module.metadata.json' with { type: 'json' }
+// metadata.name === "my-plugin"
 
-export function MyFeaturePage() {
-    // Pass the base route of your feature
-    const isContainInBottomNav = useIsContainInBottomNavBar('/my-feature');
+export function MyPage() {
+    // Same path as AppRegistry.menu registration (e.g. /my-plugin/item)
+    const isContainInBottomNav = useIsContainInBottomNavBar(`/${metadata.name}/item`);
     
     // ...
 }
@@ -27,15 +29,17 @@ The `<Page>` component from `@quan-erp/shared-ui` handles the layout for both mo
 import { Page, PageContent, PageNavTitle, useMediaQuery, SCREENS } from "@quan-erp/shared-ui";
 import { useIsContainInBottomNavBar } from "@quan-erp/base-frontend";
 import metadata from '../../../module.metadata.json' with { type: 'json' }
+// metadata.name === "my-plugin"
 
-export function MyFeaturePage() {
+export function MyPage() {
     const isMobile = useMediaQuery(SCREENS.md);
-    const isContainInBottomNav = useIsContainInBottomNavBar(`/${metadata.name}/my-feature`);
+    const isContainInBottomNav = useIsContainInBottomNavBar(`/${metadata.name}/item`);
 
     return (
         <Page
+            pluginName={metadata.name}
             navMenu={{
-                menuTitle: <PageNavTitle>My Feature</PageNavTitle>,
+                menuTitle: <PageNavTitle>My Items</PageNavTitle>,
                 // Show back button only on mobile AND if the page is NOT in the bottom nav tabs
                 leadingBackButton: isContainInBottomNav ? false : isMobile
             }}
@@ -45,7 +49,7 @@ export function MyFeaturePage() {
             }}
         >
             <PageContent>
-                {/* Your content here */}
+                {/* My page content */}
             </PageContent>
         </Page>
     );
@@ -60,18 +64,23 @@ When a page is in the bottom nav, you must shift the FAB up to avoid overlapping
 
 ### Positioning Pattern:
 
-- **Visible Bottom Nav**: Use `bottom-25` (shorthand for 6.25rem/100px) to clear the bar.
-- **Hidden Bottom Nav**: Use `bottom-5` (standard margin) when the bar is absent.
+- **Visible Bottom Nav** (`isContainInBottomNav === true`): Use `!bottom-25` (clears the bar).
+- **Hidden Bottom Nav** (`isContainInBottomNav === false`): Use `!bottom-5`.
+- Prefer `!` so the offset wins over `FloatingActionButton`’s default `shared:bottom-0`.
 
 ```tsx
 <FloatingActionButton
+    pluginName={metadata.name}
     className={cn(
-        "absolute", 
-        isContainInBottomNav ? "bottom-25" : "bottom-5"
+        "absolute",
+        isContainInBottomNav ? "!bottom-25" : "!bottom-5",
     )}
-    // ...
+    adaptivePosition={true}
+    expandable={false}
 />
 ```
+
+When adding a FAB, follow [How to Add Floating Action Button (FAB)](./how-to-add-floating-action-button.md) — the bottom-nav check is mandatory there.
 
 ## 4. Rationale
 

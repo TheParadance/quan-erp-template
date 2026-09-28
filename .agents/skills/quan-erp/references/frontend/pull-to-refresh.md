@@ -37,8 +37,6 @@ The component takes the following props:
 
 This example demonstrates the official design pattern for wrapping list content inside a `<PullToRefresh>` container within `<PageContent>`, handling `LoadingState`, `ErrorState`, and `EmptyState` components.
 
-This pattern is modeled directly after the **Business Branch** implementation in [branch.page.tsx](file:///Users/jianshangquan/App-Developemnt/ThePradanceCodeProject/quan-erp-node/quan-erp-node-core/base/frontend/src/page/branch/branch.page.tsx).
-
 ```tsx
 import React, { useState } from "react";
 import { 
@@ -52,12 +50,12 @@ import {
 } from "@quan-erp/shared-ui";
 import { Plus } from "@icon-park/react";
 import { toast } from "sonner";
-import { useItemsQuery } from "./api/items.api"; // Custom TanStack Query Hook
+import { useMyItemQuery } from "./api/item.queries";
 import metadata from "../../module.metadata.json" with { type: "json" };
 
 export function MyPage() {
     const [refreshing, setRefreshing] = useState(false);
-    const { data: items, refetch, isLoading, isError } = useItemsQuery();
+    const { data: items, refetch, isLoading, isError } = useMyItemQuery();
 
     // 1. Define standard asynchronous gesture handler
     async function handleRefresh() {

@@ -132,7 +132,34 @@ Combined components that automatically adapt between Dialog (Desktop) and Drawer
 - `ResponsiveContent`
 - `ResponsiveHeader`
 - `ResponsiveTitle`
+- `ResponsiveDescription`
+- `ResponsiveFooter`
 - `DesktopDialogType` (Enum: `DIALOG`, `SHEET`, `MODAL`)
+
+> [!IMPORTANT]
+> **`pluginName` on portal content:** Always pass `pluginName={metadata.name}` on `<ResponsiveContent>` (and on `DialogContent` / `SheetContent` when used directly). Portals render outside `<Page>`, so without `pluginName` / `data-plugin` scoped Tailwind styles break.
+>
+> **Wrap title/description in `<div>`:** `<ResponsiveTitle>` and `<ResponsiveDescription>` must wrap their children in a `<div>` — do not pass bare text nodes or fragments.
+
+```tsx
+<ResponsiveDialog open={open} onOpenChange={setOpen}>
+  <ResponsiveContent pluginName={metadata.name} className="w-full max-w-none gap-6 md:max-w-[425px]">
+    <ResponsiveHeader>
+      <ResponsiveTitle>
+        <div>{t.get("add-item", "Add item")}</div>
+      </ResponsiveTitle>
+      <ResponsiveDescription>
+        <div>{t.get("add-item-description", "Create a new item.")}</div>
+      </ResponsiveDescription>
+    </ResponsiveHeader>
+    {/* form body */}
+    <ResponsiveFooter className="gap-2 px-0 pb-0">
+      <Button variant="outline" onClick={() => setOpen(false)}>{t.get("cancel", "Cancel")}</Button>
+      <Button onClick={onSave}>{t.get("save", "Save")}</Button>
+    </ResponsiveFooter>
+  </ResponsiveContent>
+</ResponsiveDialog>
+```
 
 **UncontrolledResponsiveDialog**
 A variation that manages its own `open` state internally and exposes control via a `ref`.
@@ -146,6 +173,7 @@ Use this when you want to **prevent the parent component from re-rendering** eve
 ```tsx
 import { useRef } from "react";
 import { Button, UncontrolledResponsiveDialog, ResponsiveContent, type ResponsiveDialogRefType } from "@quan-erp/shared-ui";
+import { metadata } from "../lib/metadata";
 
 export function MyPage() {
     const dialogRef = useRef<ResponsiveDialogRefType>(null);
@@ -156,8 +184,10 @@ export function MyPage() {
             <Button onClick={() => dialogRef.current?.open()}>Open Dialog</Button>
             
             <UncontrolledResponsiveDialog ref={dialogRef}>
-                <ResponsiveContent>
-                    <h2>Dialog Content</h2>
+                <ResponsiveContent pluginName={metadata.name}>
+                    <ResponsiveTitle>
+                      <div>Dialog Content</div>
+                    </ResponsiveTitle>
                     <Button onClick={() => dialogRef.current?.close()}>Close</Button>
                 </ResponsiveContent>
             </UncontrolledResponsiveDialog>
@@ -269,6 +299,7 @@ return (
              <Table>
                  {/* ... table content ... */}
              </Table>
+             {/* Do not wrap Table in rounded-lg / border border-border — shared-ui Table already styles itself */}
         </ResponsiveContent>
     </ResponsiveDialog>
 );
@@ -552,16 +583,25 @@ registerSportlightSearch({
 
 The FAB provides quick access to primary actions on mobile. **It must be hidden on desktop.**
 
+> [!IMPORTANT]
+> When adding a FAB you **must** call `useIsContainInBottomNavBar`, sync `<Page bottomNav={{ visible: isContainInBottomNav }} />`, and set `className={cn("absolute", isContainInBottomNav ? "!bottom-25" : "!bottom-5")}`. See [How to Add Floating Action Button](../frontend/how-to-add-floating-action-button.md).
+
 #### Implementation Pattern
 Use the `isMobile` check and `isContainInBottomNav` state to position the FAB correctly.
 
 ```tsx
 import { FloatingActionButton, FloatingButton, cn } from "@quan-erp/shared-ui";
+import { useIsContainInBottomNavBar } from "@quan-erp/base-frontend";
+
+const isContainInBottomNav = useIsContainInBottomNavBar(`/${metadata.name}/my-page`);
 
 {isMobile && (
     <FloatingActionButton
-        // Use bottom-25 if bottom nav is visible, bottom-5 otherwise
-        className={cn("absolute", isContainInBottomNav ? "bottom-25" : "bottom-5")}
+        pluginName={metadata.name}
+        className={cn(
+            "absolute",
+            isContainInBottomNav ? "!bottom-25" : "!bottom-5",
+        )}
         adaptivePosition={true}
         expandable={false}
     >
@@ -583,8 +623,10 @@ Quan ERP uses a `[data-plugin]` attribute mechanism to isolate plugin styles and
 
 ### Critical Rules
 1. **`pluginName` Prop**: Every `<Page>` component MUST receive the `pluginName` prop.
-2. **Portal Content**: Components like Modals, Dialogs, and Sheets are "portaled" to the document root. You MUST apply `data-plugin={metadata.name}` to the root of the portal content (e.g., `<SheetContent data-plugin={metadata.name}>`) to ensure Tailwind styles apply correctly.
-3. **Borders**: Always use `border border-border` instead of just `border`.
+2. **Portal Content**: Components like Modals, Dialogs, and Sheets are "portaled" to the document root. Always pass `pluginName={metadata.name}` on `<ResponsiveContent>` (preferred), or `data-plugin={metadata.name}` on `<DialogContent>` / `<SheetContent>`, so scoped Tailwind styles apply.
+3. **Responsive title/description**: Wrap children of `<ResponsiveTitle>` and `<ResponsiveDescription>` in a `<div>` (no bare text).
+4. **Borders**: Always use `border border-border` instead of just `border`.
+5. **`Table`**: Do **not** wrap `@quan-erp/shared-ui` `<Table>` in an extra bordered/card shell (`rounded-lg border`, `border border-border`, etc.). Use a plain overflow wrapper only when needed (e.g. `overflow-x-auto`). The Table component already provides its own chrome.
 
 ## API Communication
 

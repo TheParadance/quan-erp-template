@@ -26,7 +26,7 @@ The component takes the following props:
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `icon` | `Component` | **Yes** | The `@icon-park/react` component class (e.g., `Home`, `SettingTwo`). |
+| `icon` | `Component` | **Yes** | The `@icon-park/react` component class (e.g., `List`, `SettingTwo`). |
 | `pluginName` | `string` | No | The name of your plugin (usually `metadata.name`). |
 | `className` | `string` | No | Additional Tailwind or CSS classes to override default styling. |
 | `...props` | `any` | No | Any other props are passed directly to the underlying IconPark icon element (such as `size` or `fill`). |
@@ -40,18 +40,19 @@ To add items to the system sidebar menu, use `IconParkMenuTabIcon` inside `<Menu
 ```tsx
 import { AppRegistryState } from "@quan-erp/shared-types";
 import { IconParkMenuTabIcon, MenuTab } from "@quan-erp/shared-ui";
-import { SettingTwo, Bookmark } from "@icon-park/react";
+import { List, Bookmark } from "@icon-park/react";
 import metadata from "../../module.metadata.json" with { type: "json" };
-import { Locale } from "./locale.export";
+// metadata.name === "my-plugin"
+import { MyLocale } from "./locale.export";
 
 AppRegistry.menu.add({
   name: (
     <MenuTab 
       pluginName={metadata.name}
-      icon={<IconParkMenuTabIcon pluginName={metadata.name} icon={SettingTwo} />} 
-      labelKey="settings-tab" 
-      fallbackLabel="Settings" 
-      locale={Locale}
+      icon={<IconParkMenuTabIcon pluginName={metadata.name} icon={List} />} 
+      labelKey="my-items-tab" 
+      fallbackLabel="My Items" 
+      locale={MyLocale}
     />
   ),
   pluginName: metadata.name,
@@ -61,14 +62,14 @@ AppRegistry.menu.add({
         <MenuTab 
           pluginName={metadata.name}
           icon={<IconParkMenuTabIcon pluginName={metadata.name} icon={Bookmark} />} 
-          labelKey="sub-item" 
-          fallbackLabel="Sub Item" 
-          locale={Locale}
+          labelKey="my-item-detail" 
+          fallbackLabel="Item Detail" 
+          locale={MyLocale}
         />
       ),
-      path: `/${metadata.name}/sub-route`,
+      path: `/${metadata.name}/item`,
       requiredApis: [
-        { url: `/${metadata.name}/endpoints/`, method: "GET" }
+        { url: `/${metadata.name}/item/`, method: "GET" }
       ]
     }
   ]
@@ -80,5 +81,5 @@ AppRegistry.menu.add({
 ## Best Practices
 
 1. **Keep Default Stroke and Fill**: Avoid setting hardcoded size or fill properties directly on `IconParkMenuTabIcon` unless explicitly required by the visual specification, allowing the application theme context to handle colors automatically.
-2. **Include `pluginName`**: Pass the `pluginName` prop when wrapping icons. This ensures perfect metadata attribute tagging (adds `data-plugin="plugin-name"`).
+2. **Include `pluginName`**: Pass the `pluginName` prop when wrapping icons. This ensures perfect metadata attribute tagging (adds `data-plugin="my-plugin"`).
 3. **Prefer `@icon-park/react`**: While the system has secondary support for `lucide-react` in utilities, all main sidebar and menu registrations **must** use IconPark icons wrapped in `IconParkMenuTabIcon`.

@@ -10,26 +10,28 @@ Dashboard widgets must be registered within the `register` method of your plugin
 > **`DashboardItem` MUST be inlined in `index.tsx` at `AppRegistry.dashboard.add`.** Do **not** wrap widget content with `DashboardItem` inside the widget component file. Widget files export content only; the shell (`id`, `colSpan`, `rowSpan`, `pluginName`, `requiredApis`) belongs at registration.
 
 ```tsx
-// frontend/src/index.tsx
+// frontend/src/index.tsx — plugin my-plugin
 import type { AppRegistryState, PluginModule } from "@quan-erp/shared-types";
 import { DashboardItem } from "@quan-erp/shared-ui";
-import { YourDashboardWidget } from "./page/dashboard/your-dashboard-widget";
-import { getYourDashboardApi } from "./api/dashboard/dashboard.api";
+import { MyDashboardWidget } from "./page/dashboard/my-dashboard-widget";
+import { getMyItemApi } from "./api/item/item.api";
+import metadata from "../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
 const Plugin: PluginModule = {
     register(AppRegistry: AppRegistryState) {
         AppRegistry.dashboard.add({
-            id: "unique-widget-id", // Must be unique across all plugins
+            id: "my-plugin/my-dashboard-widget", // Must be unique across all plugins
             pluginName: metadata.name,
             element: (
                 <DashboardItem
-                    id="unique-widget-id" // Must match registration id
+                    id="my-plugin/my-dashboard-widget" // Must match registration id
                     colSpan={2}
                     rowSpan={1}
                     pluginName={metadata.name}
-                    requiredApis={[getYourDashboardApi.api]}
+                    requiredApis={[getMyItemApi.api]}
                 >
-                    <YourDashboardWidget />
+                    <MyDashboardWidget />
                 </DashboardItem>
             ),
         });
@@ -50,15 +52,15 @@ Widget components render **content only** — no `DashboardItem` wrapper.
 - **`requiredApis`**: Pass API permissions on `DashboardItem` at registration (use `.api` from `withApiMetadataFetchFn` objects).
 
 ```tsx
-// frontend/src/page/dashboard/your-dashboard-widget.tsx
+// frontend/src/page/dashboard/my-dashboard-widget.tsx
 import { useDashboardContext } from "@quan-erp/base-frontend";
 
-export function YourDashboardWidget() {
+export function MyDashboardWidget() {
     const { startDate, endDate } = useDashboardContext();
 
     return (
         <div className="flex flex-col w-full h-full p-4 gap-2">
-            <h3>Widget Title</h3>
+            <h3>My Widget</h3>
             <span>Start date {startDate.toLocaleDateString()}</span>
             <span>End date {endDate.toLocaleDateString()}</span>
         </div>

@@ -17,18 +17,18 @@ To trigger a frontend callback, the backend must specify the `pluginName` when s
 For detailed backend implementation details, see [How to Send Notifications (Backend)](../backend/how-to-send-notification.md).
 
 ```typescript
-// Backend Service
+// Backend MyService — metadata.name === "my-plugin"
 await this.notificationService.send({
     userIds: [user.id],
-    title: "Action Required",
-    body: "Please check the new record",
-    pluginName: "my-plugin", // Critical: Must match frontend registration
-    topic: "record-updated",
-    url: "/app/my-plugin/detail/123",
+    title: "Item Updated",
+    body: "Please check the new item",
+    pluginName: metadata.name, // Critical: Must match frontend registration
+    topic: "my-plugin.item_updated",
+    url: `/app/my-plugin/item/123`,
     data: {
-        pluginName: "my-plugin", // Required for FCM routing
-        url: "/app/my-plugin/detail/123", // required for foreground and background native notification clicked,
-         topic: "record-updated",
+        pluginName: metadata.name, // Required for FCM routing
+        url: `/app/my-plugin/item/123`, // required for foreground and background native notification clicked
+        topic: "my-plugin.item_updated",
     }
 });
 ```
@@ -50,9 +50,12 @@ In your plugin's `src/index.tsx`:
 import { 
     getInAppNotificationRegistry, 
     getFirebaseForegroundNotificationRegistry,
+    getFirebaseBackgroundNotificationRegistry,
     navigate 
 } from "@quan-erp/base-frontend";
+import type { AppRegistryState, PluginModule } from "@quan-erp/shared-types";
 import metadata from "../../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
 const Plugin: PluginModule = {
     register(AppRegistry: AppRegistryState) {
@@ -80,6 +83,8 @@ const Plugin: PluginModule = {
         });
     }
 };
+
+export default Plugin;
 ```
 
 ## Best Practices
@@ -91,8 +96,8 @@ const Plugin: PluginModule = {
 ```typescript
 // Example of topic filtering
 getInAppNotificationRegistry().register(metadata.name, (noti) => {
-    if (noti.topic === "order.completed") {
-        // Refresh specific store
+    if (noti.topic === "my-plugin.item_updated") {
+        // Refresh MyItem list / store
     }
 });
 ```

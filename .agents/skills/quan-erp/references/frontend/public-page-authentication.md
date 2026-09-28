@@ -16,6 +16,7 @@ Tokens are delivered exclusively as `httpOnly` cookies. The frontend never sees,
 ```typescript
 export const PUBLIC_ACCESS_TOKEN_COOKIE = `${metadata.name}-public-token`;
 export const PUBLIC_REFRESH_TOKEN_COOKIE = `${metadata.name}-public-token-refresh`;
+// metadata.name === "my-plugin" → cookies: my-plugin-public-token, my-plugin-public-token-refresh
 
 const baseCookieOptions = {
   httpOnly: true,
@@ -98,7 +99,7 @@ publicAxios.interceptors.response.use(
 - After login/signup success, navigate to the protected page; cookies are already set by the response.
 - Logout must call the backend logout endpoint (revokes session + clears cookies), then navigate to login.
 - API declarations still follow the [React Query API standard](./react-query-api.md) — no token parameters or Authorization headers; cookies handle it.
-- Share the signed-in **profile** across public pages with an in-memory Zustand store (e.g. `page/public/store/user-store.ts` holding `PublicAccount`). Set on login/signup, clear on logout / auth failure. Do **not** persist tokens or use the store as an auth gate — cookies remain the source of truth.
+- Share the signed-in **profile** across public pages with an in-memory Zustand store (e.g. `page/public/store/my-user-store.ts` holding `MyPublicAccount`). Set on login/signup, clear on logout / auth failure. Do **not** persist tokens or use the store as an auth gate — cookies remain the source of truth.
 
 ## 6. Public Nested Routes + `React.lazy`
 
@@ -110,25 +111,25 @@ import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 const LoginPage = lazy(() =>
-  import("./login/login.page").then((m) => ({ default: m.LoginPage })),
+  import("./login/login.page").then((m) => ({ default: m.MyLoginPage })),
 );
 const SignupPage = lazy(() =>
-  import("./signup/signup.page").then((m) => ({ default: m.SignupPage })),
+  import("./signup/signup.page").then((m) => ({ default: m.MySignupPage })),
 );
-const RewardDashboardPage = lazy(() =>
-  import("./reward-dashboard/reward-dashboard.page").then((m) => ({
-    default: m.RewardDashboardPage,
+const HomePage = lazy(() =>
+  import("./home/home.page").then((m) => ({
+    default: m.MyHomePage,
   })),
 );
 
-export function PublicShellPage() {
+export function MyPublicShellPage() {
   return (
     <Suspense fallback={<LoadingState />}>
       <Routes>
         <Route index element={<Navigate replace to={HOME_PATH} />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<SignupPage />} />
-        <Route path="home" element={<RewardDashboardPage />} />
+        <Route path="home" element={<HomePage />} />
         <Route path="*" element={<Navigate replace to={HOME_PATH} />} />
       </Routes>
     </Suspense>

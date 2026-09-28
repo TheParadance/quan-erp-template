@@ -33,27 +33,27 @@ The `ResponseDto` ensures that every API response includes consistent metadata (
 Use these static methods to create responses:
 
 ```typescript
-import { ResponseDto } from "@quan-erp/shared-backend-core";
+import { ResponseDto, HttpStatus } from "@quan-erp/shared-backend-core";
 
-@Get("/profile")
-async getProfile() {
-    const profile = await this.service.getProfile();
-    return ResponseDto.ok(profile);
+@Get("/item/:id")
+async getItem(@Param("id") id: number) {
+    const item = await this.myService.getItem(id);
+    return ResponseDto.ok(item);
 }
 
-@Delete("/history/:id")
-async deleteHistory(@Param("id") id: string) {
-    await this.service.delete(id);
+@Delete("/item/:id")
+async removeItem(@Param("id") id: number) {
+    await this.myService.remove(id);
     return ResponseDto.okWithEmpty(); // Sends success status with empty payload
 }
 
-@Post("/update")
-async update() {
+@Post("/item")
+async createItem(@Body() body: RequestDto<CreateMyItemDto>) {
     try {
-        // ... logic
-        return ResponseDto.ok({ success: true }, { message: "Profile updated successfully" });
+        const result = await this.myService.create(body.payload);
+        return ResponseDto.ok(result, { message: "Item created successfully" });
     } catch (e) {
-        return ResponseDto.error("Failed to update profile", HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseDto.error("Failed to create item", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
 ```
@@ -68,10 +68,10 @@ The `@Body()` decorator in Quan ERP controllers expects a `RequestDto`. The actu
 ```typescript
 import { RequestDto, Body } from "@quan-erp/shared-backend-core";
 
-@Post("/calculate")
-async calculate(@Body() body: RequestDto<LoanCalculationDto>) {
+@Post("/item/calculate")
+async calculate(@Body() body: RequestDto<MyCalculateDto>) {
     const data = body.payload; // Access the actual DTO here
-    return this.service.calculate(data);
+    return this.myService.calculate(data);
 }
 ```
 
@@ -101,11 +101,15 @@ When calling backend APIs, you must wrap the request payload using the `RequestD
 import { RequestDto, ResponseDto } from "@quan-erp/shared-frontend-core";
 import { getAxiosClient } from "../lib/axios";
 import metadata from "../../../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
-export const calculateLoan = async (dto: LoanCalculationDto) => {
+export const calculateMyItem = async (dto: MyCalculateDto) => {
     // 1. Wrap the outgoing request payload
     // use metadata.name for the plugin path prefix
-    const response = await getAxiosClient().post(`/${metadata.name}/calculate`, new RequestDto(dto));
+    const response = await getAxiosClient().post(
+        `/${metadata.name}/item/calculate`,
+        new RequestDto(dto),
+    );
     
     // 2. The server returns a JSON matching the ResponseDto structure
     const data: ResponseDto<any> = response.data;

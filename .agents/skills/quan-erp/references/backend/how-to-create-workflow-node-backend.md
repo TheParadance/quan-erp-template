@@ -3,7 +3,7 @@
 This guide outlines the standard procedure for creating and registering custom Workflow nodes in the Quan ERP backend.
 
 > [!NOTE]
-> **Imports**: Core workflow types like `IWorkflowNode`, `ExecutionContext`, `NodeResultType`, `PromisableReturn`, `NodeResult`, `PropsType`, and `SchemaToType` should ALWAYS be imported from `@quan-erp/shared-backend-core`.
+> **Imports**: Workflow types like `IWorkflowNode`, `ExecutionContext`, `NodeResultType`, `PromisableReturn`, `NodeResult`, `PropsType`, and `SchemaToType` should ALWAYS be imported from `@quan-erp/shared-backend-core`.
 
 ## 1. Workflow Node Components
 
@@ -29,7 +29,7 @@ type Props = SchemaToType<typeof inputSchema>;
 const returnSchema = {
     type: 'object',
     properties: {
-        bookingId: {
+        itemId: {
             type: 'number'
         },
     }
@@ -77,17 +77,15 @@ process(context: ExecutionContext, uid: string, props: Props, args: any): Promis
 ```
 
 ### Manually Executing Another Node (Sub-executions)
-Sometimes, a node's logic requires it to manually trigger and wait for the result of another node (e.g., an AI Agent node invoking an AI Tool node). Instead of relying on the default lifecycle `nextToExecute` routing, you can directly call `context.execute()` to run another node.
+Sometimes, a node's logic requires it to manually trigger and wait for the result of another node. Instead of relying on the default lifecycle `nextToExecute` routing, you can directly call `context.execute()` to run another node.
 
 ```typescript
-// Example from ai-agent-workflow-node.ts
-
 // 1. Manually trigger the target node. `context.execute` bypasses normal UI edges
 // and forces the node to run right now with the injected `args`.
-const toolResult = await context.execute(toolNodeId, onToolProps.arguments);
+const myNodeResult = await context.execute(myNodeId, myArgs);
 
-// 2. toolResult is of type NodeResultType. You must access the raw payload from `.result`
-const actualOutputPayload = toolResult.result[0];
+// 2. myNodeResult is of type NodeResultType. You must access the raw payload from `.result`
+const actualOutputPayload = myNodeResult.result[0];
 
 // 3. You can now use the executed node's output in the current node's logic
 ```
@@ -100,10 +98,9 @@ When you use `context.execute(nodeId, args)`:
 
 ## 4. Defining the Execution Path (`nextToExecute`)
 
-You can define custom routing logic by implementing the `nextToExecute` method. This is useful for conditional nodes (like `IfNode`) or loop nodes.
+You can define custom routing logic by implementing the `nextToExecute` method. This is useful for conditional nodes or loop nodes.
 
 ```typescript
-// Example from if-workflow-node.ts
 nextToExecute(context: ExecutionContext, uid: string, args: NodeResultType<ReturnType>): PromisableReturn<string[]> | PromisableReturn<null> {
     const current = context.findWorkflowNodeById(uid);
     const ifTrue = current?.next?.[0];
@@ -119,20 +116,21 @@ nextToExecute(context: ExecutionContext, uid: string, args: NodeResultType<Retur
 
 ## 5. Registering the Node in the Plugin Module
 
-Once you have defined your workflow node class, you must register it in your plugin's root module (e.g., `hotel-management.module.ts`) by injecting it into the `workflowNodes` array of the `@Module` decorator.
+Once you have defined your workflow node class, you must register it in your plugin's root module (e.g., `my-plugin.module.ts`) by injecting it into the `workflowNodes` array of the `@Module` decorator.
 
 ```typescript
 import { Module } from "@quan-erp/shared-backend-core";
-import { OnBookingWorkflowNode } from "../workflow/OnBooking.workflow.js";
+import { MyWorkflowNode } from "../workflow/my.workflow.js";
+import metadata from "../../../module.metadata.json" with { type: "json" };
 
 @Module({
     name: metadata.name,
     // ... providers, controllers, entities, etc.
     workflowNodes: [
-        OnBookingWorkflowNode
+        MyWorkflowNode
     ]
 })
-export default class HotelManagementModule {}
+export class MyModule {}
 ```
 
 This registration step is critical for the backend to mount your custom node and expose its schema definition to the frontend workflow editor.
@@ -144,23 +142,23 @@ For workflow nodes that act as event triggers (e.g., `isTriggerable: true`), you
 To do this, inject the `WorkflowService` from the `BUILTIN_PLUGIN` namespace, find all active workflows initialized with your custom node ID, and execute them.
 
 ```typescript
-import { Controller, Inject, WorkflowService, ContainerRegistryManager } from "@quan-erp/shared-backend-core";
-import { OnBookingWorkflowNode } from "../../workflow/OnBooking.workflow.js";
+import { Controller, Inject, WorkflowService, ContainerRegistryManager, ResponseDto } from "@quan-erp/shared-backend-core";
+import { MyTriggerWorkflowNode } from "../../workflow/my-trigger.workflow.js";
 import metadata from '../../../../module.metadata.json' with { type: "json" };
+// metadata.name === "my-plugin"
 
-@Controller("/bookings")
-export class BookingController {
+@Controller("/item")
+export class MyController {
     
-    // Inject the core WorkflowService
     @Inject(WorkflowService, ContainerRegistryManager.BUILTIN_PLUGIN)
     workflowService: WorkflowService;
 
-    async createBooking() {
-        // ... business logic to create booking ...
+    async createItem() {
+        // ... business logic to create item ...
 
         // 1. Find all active workflows that start with this trigger node
         const workflows = await this.workflowService.findByInitId(
-            `${metadata.name}/${OnBookingWorkflowNode.NODE_ID}`, 
+            `${metadata.name}/${MyTriggerWorkflowNode.NODE_ID}`, 
             { active: true }
         );
 
@@ -169,8 +167,8 @@ export class BookingController {
             return this.workflowService.executeWorkflow({
                 workflow: w,
                 args: {
-                    bookingId: 1, // Pass arguments defined in your node's Args schema
-                    bookingSource: "web"
+                    itemId: 1, // Pass arguments defined in your node's Args schema
+                    source: "web"
                 },
             });
         });
@@ -179,65 +177,65 @@ export class BookingController {
 }
 ```
 
-## 7. Full Node Example (`ai-model-workflow-node.ts`)
+## 7. Full Node Example (`my.workflow.ts`)
 
-Below is a complete, real-world example of a workflow node (the AI Model node) that ties together schema definition, dependency injection, and node execution.
+Below is a complete example of a workflow node that ties together schema definition, dependency injection, and node execution.
 
 ```typescript
-import { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources";
 import { 
-    AIModelService, 
-    AIOptions, 
-    OnToolCallCallback,
     Inject,
     ExecutionContext,
-    WorkflowNodeManager,
     IWorkflowNode, 
     NodeResultType, 
     PropsType, 
     PromisableReturn, 
     SchemaToType, 
     WorkflowNodeDefination, 
-    NodeResult 
+    NodeResult,
+    Service,
 } from "@quan-erp/shared-backend-core";
+import { MyService } from "../feature/item/item.service.js";
 import metadata from "../../../module.metadata.json" with { type: 'json' }
+// metadata.name === "my-plugin"
 
 const inputSchema = {
     type: 'object',
     properties: {
-        model: {
-            type: 'string'
+        itemId: {
+            type: 'number'
         },
     }
 } as const satisfies PropsType;
 type Props = SchemaToType<typeof inputSchema>;
 
 const returnSchema = {
-    type: 'string',
+    type: 'object',
+    properties: {
+        name: {
+            type: 'string'
+        },
+    }
 } as const satisfies PropsType;
 export type ReturnType = SchemaToType<typeof returnSchema>;
 
 export type Args = {
-    prompt: string,
-    options: AIOptions<any>
-    onToolCall: OnToolCallCallback,
+    itemId: number,
 }
 
-export class AIModelWorkflowNode implements IWorkflowNode<Props, ReturnType, Args> {
-    static NODE_ID: string = 'ai-model'
+@Service()
+export class MyWorkflowNode implements IWorkflowNode<Props, ReturnType, Args> {
+    static NODE_ID: string = 'my-node'
 
-    @Inject(AIModelService)
-    aiModelService: AIModelService
+    @Inject(MyService)
+    myService: MyService
 
     async process(context: ExecutionContext, uid: string, props: Props, args: Args): Promise<NodeResultType<ReturnType>> {
-        const model = await this.aiModelService.getInstance(props.model)
-        if (!model) {
-            throw new Error(`Model ${props.model} not found`)
+        const resolvedProps = context.pipeData.resolve(props);
+        const item = await this.myService.getItem(resolvedProps.itemId ?? args.itemId)
+        if (!item) {
+            throw new Error(`Item not found`)
         }
-        const result = await model.query(args.prompt, {
-            onToolCall: args.onToolCall,
-        }, args.options)
-        return NodeResult.single(result)
+        return NodeResult.single({ name: item.name })
     }
     
     nextToExecute(context: ExecutionContext, uid: string, args: NodeResultType<ReturnType>): PromisableReturn<string[]> | PromisableReturn<null> {
@@ -246,16 +244,11 @@ export class AIModelWorkflowNode implements IWorkflowNode<Props, ReturnType, Arg
     
     getDefination(): WorkflowNodeDefination {
         return {
-            // NOTE FOR PLUGINS:
             // Custom plugins should define their type as `<plugin-name>/<node-id>`.
-            // You can import your plugin name from your module's metadata.json:
-            // import metadata from "../../../module.metadata.json" with { type: 'json' };
-            // type: `${metadata.name}/${AIModelWorkflowNode.NODE_ID}`,
-            
-            type: `${metadata.name}/${AIModelWorkflowNode.NODE_ID}`,
-            group: ['any', 'ai-model'],
-            displayName: 'AI Model',
-            description: 'AI Model',
+            type: `${metadata.name}/${MyWorkflowNode.NODE_ID}`,
+            group: ['any', 'my-plugin'],
+            displayName: 'My Node',
+            description: 'Load a my-plugin item by id',
             props: inputSchema,
             isTriggerable: false,
             returnType: {

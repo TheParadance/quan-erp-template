@@ -9,7 +9,7 @@ There are three types of spotlight searches available:
 | Type | Name | Description |
 | :--- | :--- | :--- |
 | `SIMPLE_SEARCH` | Link/Navigation Search | Used for providing shortcuts to pages, actions, or frequently used links. Returns static or filtered navigation items. |
-| `FULL_TEXT_SEARCH` | Backend Data Search | Used for searching database records (e.g., employees, partners, products) using keyword matching. |
+| `FULL_TEXT_SEARCH` | Backend Data Search | Used for searching database records (e.g., my items) using keyword matching. |
 | `DEEP_SEARCH` | AI/Vector Search | Used for complex or semantic queries using vector search capabilities. |
 
 ## 2. Registration
@@ -29,10 +29,12 @@ import {
     useSportlightSearchStore
 } from "@quan-erp/base-frontend";
 import { CommandItem } from "@quan-erp/shared-ui";
-import { User } from "@icon-park/react";
+import { List } from "@icon-park/react";
+import metadata from "../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
 // Recommended pattern: Create a wrapper component to handle navigation and closing the search box
-function SearchLinkItem({ path, children, value }: { path: string, children: React.ReactNode, value: string }) {
+function MySearchLinkItem({ path, children, value }: { path: string, children: React.ReactNode, value: string }) {
     const store = useSportlightSearchStore();
     
     return (
@@ -49,8 +51,8 @@ function SearchLinkItem({ path, children, value }: { path: string, children: Rea
 }
 
 registerSportlightSearch({
-    pluginName: 'your-plugin-name',
-    groupTitle: 'Actions',
+    pluginName: metadata.name,
+    groupTitle: 'My Actions',
     searchType: SportlightSearchType.SIMPLE_SEARCH,
     callback: async (query: SportlightSearchQuery): Promise<SportlightSearchResult[]> => {
         // Return static navigation items or filter based on query.query
@@ -58,10 +60,10 @@ registerSportlightSearch({
             {
                 priority: 1,
                 component: (
-                    <SearchLinkItem path="/app/profile" value="go to profile">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Go to Profile</span>
-                    </SearchLinkItem>
+                    <MySearchLinkItem path="/app/my-plugin/item" value="go to my items">
+                        <List className="mr-2 h-4 w-4" />
+                        <span>Go to My Items</span>
+                    </MySearchLinkItem>
                 )
             }
         ];
@@ -70,18 +72,18 @@ registerSportlightSearch({
 ```
 
 ### Full Text Search (Data)
-Used for searching database records (e.g., employees, partners, products).
+Used for searching database records (e.g., my items).
 
 ```tsx
 registerSportlightSearch({
-    pluginName: 'your-plugin-name',
-    groupTitle: 'Employees',
+    pluginName: metadata.name,
+    groupTitle: 'My Items',
     searchType: SportlightSearchType.FULL_TEXT_SEARCH,
     callback: async (query: SportlightSearchQuery): Promise<SportlightSearchResult[]> => {
         if (query.searchType !== SportlightSearchType.FULL_TEXT_SEARCH) return [];
         
         // Fetch data from your API
-        const results = await myPluginApi.search(query.query);
+        const results = await getMyItemApi.fetchFn(0, 20, query.query);
         
         return results.map(item => ({
             priority: 1,
@@ -89,7 +91,7 @@ registerSportlightSearch({
                 <CommandItem 
                     key={item.id}
                     value={item.name} 
-                    onSelect={() => navigate(`/app/feature/${item.id}`)}
+                    onSelect={() => navigate(`/app/my-plugin/item/${item.id}`)}
                 >
                     <div className="flex flex-col">
                         <span className="font-bold">{item.name}</span>
@@ -107,14 +109,14 @@ Used for semantic searches or AI-driven queries using vector embeddings.
 
 ```tsx
 registerSportlightSearch({
-    pluginName: 'your-plugin-name',
-    groupTitle: 'AI Knowledge',
+    pluginName: metadata.name,
+    groupTitle: 'My Knowledge',
     searchType: SportlightSearchType.DEEP_SEARCH,
     callback: async (query: SportlightSearchQuery): Promise<SportlightSearchResult[]> => {
         if (query.searchType !== SportlightSearchType.DEEP_SEARCH) return [];
         
         // Fetch vector search results from backend
-        const results = await myPluginApi.deepSearch(query.query);
+        const results = await getMyDeepSearchApi.fetchFn(query.query);
         
         return results.map(item => ({
             priority: item.score, // Use similarity score for priority
@@ -122,7 +124,7 @@ registerSportlightSearch({
                 <CommandItem 
                     key={item.id}
                     value={item.content} 
-                    onSelect={() => navigate(`/app/knowledge/${item.id}`)}
+                    onSelect={() => navigate(`/app/my-plugin/item/${item.id}`)}
                 >
                     <div className="flex flex-col">
                         <span className="font-medium">{item.title}</span>
@@ -139,12 +141,12 @@ registerSportlightSearch({
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `pluginName` | `string` | The name of the plugin registering the callback. |
+| `pluginName` | `string` | The name of the plugin registering the callback (use `metadata.name`). |
 | `groupTitle` | `string` | The header displayed above this group of search results. |
 | `searchType` | `SportlightSearchType` | `SIMPLE_SEARCH`, `FULL_TEXT_SEARCH`, or `DEEP_SEARCH`. |
 | `callback` | `function` | Async function returning `SportlightSearchResult[]`. |
 
-## 3. Search Result Object
+## 4. Search Result Object
 
 | Property | Type | Description |
 | :--- | :--- | :--- |

@@ -44,9 +44,9 @@ translation.get("welcome-user", "Welcome, {{name}}", { name: user.name })
 ### 1. Folder Structure & Locale Definition
 
 ```text
-src/page/branch/
-├── branch.page.tsx
-├── branch.locale.ts
+src/page/item/
+├── item.page.tsx
+├── item.locale.ts
 └── locales/
     ├── en-US.json
     ├── my-MM.json
@@ -56,17 +56,17 @@ src/page/branch/
 **Example `locales/en-US.json`:**
 ```json
 {
-    "fleet-management": "Fleet Management",
+    "my-items": "My Items",
     "save": "Save",
     "welcome-user": "Welcome, {{name}}"
 }
 ```
 
-**Example `branch.locale.ts`:**
+**Example `item.locale.ts`:**
 ```typescript
 import type { LazyLocaleType } from "@quan-erp/shared-ui";
 
-export const BranchLocaleLazy: LazyLocaleType = {
+export const MyItemLocaleLazy: LazyLocaleType = {
     'en-US': () => import('./locales/en-US.json'),
     'my-MM': () => import('./locales/my-MM.json'),
     'zh-CN': () => import('./locales/zh-CN.json'),
@@ -79,11 +79,11 @@ Reads the active locale from the built-in setting store (`locale`). Falls back t
 
 ```tsx
 import { useLazyLocaleTranslation } from "@quan-erp/shared-ui";
-import { BranchLocaleLazy } from "./branch.locale";
+import { MyItemLocaleLazy } from "./item.locale";
 
-export default function BranchPage() {
-    const translation = useLazyLocaleTranslation(BranchLocaleLazy);
-    // optional: useLazyLocaleTranslation(BranchLocaleLazy, 'en-US')
+export default function MyItemPage() {
+    const translation = useLazyLocaleTranslation(MyItemLocaleLazy);
+    // optional: useLazyLocaleTranslation(MyItemLocaleLazy, 'en-US')
 
     if (translation.isLoading) {
         // Optionally show a lightweight loading state
@@ -115,11 +115,11 @@ Use when there is no authenticated setting store, or the UI must control locale 
 
 ```tsx
 import { usePublicLazyLocaleTranslation } from "@quan-erp/shared-ui";
-import { LoginLocaleLazy } from "./login.locale";
+import { MyLoginLocaleLazy } from "./login.locale";
 
-export default function LoginPage() {
+export default function MyLoginPage() {
     const [locale, setLocale] = useState<'en-US' | 'zh-CN' | 'my-MM'>('en-US');
-    const translation = usePublicLazyLocaleTranslation(LoginLocaleLazy, locale);
+    const translation = usePublicLazyLocaleTranslation(MyLoginLocaleLazy, locale);
 
     if (translation.isLoading) {
         // Optionally handle loading
@@ -150,9 +150,9 @@ usePublicLazyLocaleTranslation(
 ```typescript
 import type { LocaleType } from "@quan-erp/shared-ui";
 
-export const MyPluginLocale: LocaleType = {
+export const MyLocale: LocaleType = {
     "en-US": {
-        "fleet-management": "Fleet Management",
+        "my-items": "My Items",
         "save": "Save"
     },
     "my-MM": { /* ... */ },
@@ -164,19 +164,19 @@ export const MyPluginLocale: LocaleType = {
 
 ```tsx
 import { useLocaleTranslation } from "@quan-erp/shared-ui";
-import { MyPluginLocale } from "./locale";
+import { MyLocale } from "./locale";
 
-const translation = useLocaleTranslation(MyPluginLocale);
-// optional: useLocaleTranslation(MyPluginLocale, 'en-US')
+const translation = useLocaleTranslation(MyLocale);
+// optional: useLocaleTranslation(MyLocale, 'en-US')
 ```
 
 ### `usePublicLocaleTranslation` (public)
 
 ```tsx
 import { usePublicLocaleTranslation } from "@quan-erp/shared-ui";
-import { LoginLocale } from "./login.locale";
+import { MyLoginLocale } from "./login.locale";
 
-const translation = usePublicLocaleTranslation(LoginLocale, 'my-MM');
+const translation = usePublicLocaleTranslation(MyLoginLocale, 'my-MM');
 ```
 
 ### `getLocaleString` (non-hook helper)
@@ -185,7 +185,7 @@ const translation = usePublicLocaleTranslation(LoginLocale, 'my-MM');
 import { getLocaleString } from "@quan-erp/shared-ui";
 
 const label = getLocaleString({
-    locale: MyPluginLocale,
+    locale: MyLocale,
     setting, // object with setting['locale']?.value
     key: "save",
     defaultValue: "Save",
@@ -198,16 +198,17 @@ const label = getLocaleString({
 
 ```tsx
 <Page
+    pluginName={metadata.name}
     navMenu={{
         menuTitle: (
             <PageNavTitle>
-                {translation.get("expense-management", "Expense Management")}
+                {translation.get("my-items", "My Items")}
             </PageNavTitle>
         ),
     }}
 >
     <Button>
-        {translation.get("new-expense", "New Expense")}
+        {translation.get("new-item", "New Item")}
     </Button>
     <p>
         {translation.get("welcome-user", "Welcome, {{name}}", { name: "Ada" })}

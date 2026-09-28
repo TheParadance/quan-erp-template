@@ -3,7 +3,7 @@ name: quan-erp-plugins
 description: >-
   Master index for Quan ERP plugin skills. Base (`@quan-erp/base-frontend`) is split into
   domain references under base/references/. Also Accounting, Products, Sales & Purchases,
-  Payment Method, Barcode Scanner, Cron Scheduler.
+  Payment Method, Barcode Scanner.
 ---
 
 # Quan ERP Plugin Skills
@@ -79,7 +79,6 @@ Plugin-specific APIs, exports, and patterns. Pair with the general [Quan ERP ski
 | [Sales & Purchases](./sales-and-purchases/SKILL.md) | `sales-and-purchases` | `@quan-erp-plugins/sales-and-purchases-*` | Invoices, bills, orders, credit notes, payments; depends on `accounting` + `products` + `payment-method` |
 | [Payment Method](./payment-method/SKILL.md) | `payment-method` | `@quan-erp-plugins/payment-method-*` | Payment method CRUD, activate/default, metadata |
 | [Barcode Scanner](./barcode-scanner/SKILL.md) | `barcode-scanner` | `@quan-erp-plugins/barcode-scanner-*` | Camera barcode/QR via `useBarcodeScannerStore` / `scan()` |
-| [Cron Scheduler](./cron-schedular/SKILL.md) | `cron-schedular` | `@quan-erp-plugins/cron-schedular-*` | Register/stop cron jobs, listeners (`CronJobService`) |
 
 ## Dependency hints (read order)
 
@@ -87,7 +86,6 @@ Plugin-specific APIs, exports, and patterns. Pair with the general [Quan ERP ski
 base (builtin)
   ├─ barcode-scanner
   ├─ payment-method
-  ├─ cron-schedular
   └─ accounting
        └─ products  (also → barcode-scanner)
             └─ sales-and-purchases  (also → accounting, payment-method)

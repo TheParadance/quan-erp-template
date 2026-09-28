@@ -31,12 +31,13 @@ export default Plugin;
 The sidebar and navigation menu are registered using `AppRegistry.menu.add()`. Use the `MenuTab` component to ensure consistent styling and localization.
 
 ```typescript
+// metadata.name === "my-plugin"
 AppRegistry.menu.add({
   name: (
     <MenuTab 
-      icon={<IconParkMenuTabIcon icon={Hamburger} />} 
-      labelKey='food-menu' 
-      fallbackLabel="Food Menu" 
+      icon={<IconParkMenuTabIcon icon={AllApplication} />} 
+      labelKey='my-plugin' 
+      fallbackLabel="My Plugin" 
     />
   ),
   pluginName: metadata.name,
@@ -44,14 +45,14 @@ AppRegistry.menu.add({
     {
       name: (
         <MenuTab 
-          icon={<IconParkMenuTabIcon icon={Cooking} />} 
-          labelKey='counters' 
-          fallbackLabel="Counters" 
+          icon={<IconParkMenuTabIcon icon={List} />} 
+          labelKey='items' 
+          fallbackLabel="Items" 
         />
       ),
-      path: `/${metadata.name}/counters`,
+      path: `/${metadata.name}/items`,
       requiredApis: [
-        { url: '/food-menu/counter', method: 'GET' },
+        { url: `/${metadata.name}/item`, method: 'GET' },
         // ...
       ]
     },
@@ -66,27 +67,27 @@ AppRegistry.menu.add({
 
 ## 3. Route Injection
 
-Routes are registered using `AppRegistry.route.add()` for standard layout pages and `AppRegistry.rootRoute.add()` for pages that require a custom or blank layout (e.g., Public Menus, Kitchen Boards).
+Routes are registered using `AppRegistry.route.add()` for standard layout pages and `AppRegistry.rootRoute.add()` for pages that require a custom or blank layout (e.g., public shells, full-screen boards).
 
 ### Standard Routes
 ```typescript
 AppRegistry.route.add({
-  path: `/${metadata.name}/menu`,
-  element: <ProtectedFoodMenuTable />,
+  path: `/${metadata.name}/items`,
+  element: <ProtectedMyItemPage />,
 });
 ```
 
 ### Root Routes (No Layout)
 ```typescript
 AppRegistry.rootRoute.add({
-  path: `/${metadata.name}/kitchen`,
-  element: <FoodKitchenBoard />
+  path: `/${metadata.name}/board`,
+  element: <MyBoardPage />
 });
 
 // Dynamic root route
 AppRegistry.rootRoute.add({
   path: `/${metadata.name}/:id`,
-  element: <FoodPublicMenu />
+  element: <MyPublicDetailPage />
 });
 ```
 
@@ -100,16 +101,16 @@ Plugins can contribute widgets to the main dashboard using `AppRegistry.dashboar
 import { DashboardItem } from "@quan-erp/shared-ui";
 
 AppRegistry.dashboard.add({
-  id: `${metadata.name}-analytics-category`,
+  id: `${metadata.name}-summary-widget`,
   pluginName: metadata.name,
   element: (
     <DashboardItem
-      id={`${metadata.name}-analytics-category`}
+      id={`${metadata.name}-summary-widget`}
       colSpan={2}
       rowSpan={1}
       pluginName={metadata.name}
     >
-      <FoodAnalyticsCategoryChart />
+      <MySummaryChart />
     </DashboardItem>
   ),
 });
@@ -124,18 +125,18 @@ Shortcuts allow users to quickly access specific features from the home screen.
 
 ```typescript
 import { ShortcutItem, useHomeShortcutStore } from "@quan-erp/base-frontend";
-import { ShoppingCart } from "lucide-react";
+import { List } from "lucide-react";
 
 useHomeShortcutStore().getState().add({
   pluginName: metadata.name,
-  id: `${metadata.name}/pos`, // Must be unique
+  id: `${metadata.name}/items`, // Must be unique
   component: (
     <ShortcutItem>
-      <ShoppingCart size={25} />
+      <List size={25} />
     </ShortcutItem>
   ),
-  displayName: 'POS',
-  toLink: `${metadata.name}/pos`,
+  displayName: 'Items',
+  toLink: `${metadata.name}/items`,
   onClick() { 
     // Optional custom logic
   }

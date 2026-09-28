@@ -13,8 +13,8 @@ During the plugin build process, all Tailwind CSS classes are automatically tran
 Original Tailwind class: `.text-xs`
 Transformed Selector: 
 ```css
-[data-plugin=loan].text-xs,
-[data-plugin=loan] .text-xs {
+[data-plugin=my-plugin].text-xs,
+[data-plugin=my-plugin] .text-xs {
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height))
 }
@@ -42,20 +42,110 @@ export default function MyPage() {
 Components like Modals, Dialogs, and Sheets are often "portaled" to the document root (outside the `<Page>` hierarchy). Because the CSS selectors strictly require a `[data-plugin]` parent or self-attribute, styles inside these portals will break by default.
 
 > [!IMPORTANT]
-> When using Portals, you **MUST** apply the `data-plugin` attribute to the root element of the portal content.
+> When using Portals, you **MUST** tag the portal root with the plugin:
+> - Prefer `pluginName={metadata.name}` on `<ResponsiveContent>`
+> - Or `data-plugin={metadata.name}` on `<DialogContent>` / `<SheetContent>`
+>
+> For `ResponsiveTitle` / `ResponsiveDescription`, always wrap children in a `<div>`.
 
 **Incorrect (Styles will break):**
 ```tsx
-<SheetContent>
-    <div className="bg-primary p-4">...</div>
-</SheetContent>
+<ResponsiveContent>
+  <ResponsiveTitle>{t.get("title", "Title")}</ResponsiveTitle>
+  <div className="bg-primary p-4">...</div>
+</ResponsiveContent>
 ```
 
 **Correct (Styles preserved):**
 ```tsx
+<ResponsiveContent pluginName={metadata.name}>
+  <ResponsiveTitle>
+    <div>{t.get("title", "Title")}</div>
+  </ResponsiveTitle>
+  <ResponsiveDescription>
+    <div>{t.get("description", "Description")}</div>
+  </ResponsiveDescription>
+  <div className="bg-primary p-4">...</div>
+</ResponsiveContent>
+```
+
+```tsx
 <SheetContent data-plugin={metadata.name}>
     <div className="bg-primary p-4">...</div>
 </SheetContent>
+```
+
+## Base app theme tokens (predefined)
+
+**Source of truth:** `base/frontend/src/index.css` (mirrored in `shared-ui/src/index.css`). Plugins inherit these in the shell app — do **not** redefine `--background`, `--dialog-background`, etc. unless building a standalone branded public page.
+
+### `@theme inline` → Tailwind utilities
+
+Semantic colors map via `@theme inline` (e.g. `--color-background: var(--background)`). Use Tailwind utilities: `bg-background`, `text-foreground`, `border-border`, `bg-primary`, etc.
+
+### `:root` / `.dark` CSS variables
+
+| Variable | Purpose | Tailwind utility (when mapped) |
+|----------|---------|--------------------------------|
+| `--background` | App/page surface | `bg-background` |
+| `--foreground` | Default text | `text-foreground` |
+| `--card` / `--card-foreground` | Card surfaces | `bg-card`, `text-card-foreground` |
+| `--popover` / `--popover-foreground` | Popover/dropdown surfaces | `bg-popover` |
+| `--primary` / `--primary-foreground` | Brand actions | `bg-primary`, `text-primary-foreground` |
+| `--secondary` / `--secondary-foreground` | Secondary surfaces | `bg-secondary` |
+| `--muted` / `--muted-foreground` | Subtle fills / helper text | `bg-muted`, `text-muted-foreground` |
+| `--accent` / `--accent-foreground` | Hover/active accents | `bg-accent` |
+| `--destructive` | Errors / delete | `text-destructive`, `bg-destructive` |
+| `--border` | Default borders | `border-border` |
+| `--input` | Input borders/fills | `border-input` |
+| `--ring` | Focus rings | `ring-ring` |
+| `--radius` | Corner radius base | `rounded-lg`, etc. via `--radius-*` |
+| `--sidebar-*` | Sidebar chrome | `bg-sidebar`, etc. |
+| `--chart-1` … `--chart-5` | Charts | `bg-chart-1`, etc. |
+| `--black` | Pure black token | `bg-black`, `text-black` |
+| `--app-font` | Font family | — |
+
+### Overlay surface tokens (Dialog / Sheet / Drawer)
+
+These are **not** mapped to `--color-*` in `@theme inline`. Reference them with arbitrary property syntax:
+
+| Variable | Used by | Class |
+|----------|---------|-------|
+| `--dialog-background` | `DialogContent` (`shared:bg-(--dialog-background)`) | `bg-(--dialog-background)` |
+| `--sheet-background` | `SheetContent` | `bg-(--sheet-background)` |
+| `--drawer-background` | `DrawerContent` (mobile `ResponsiveDialog`) | `bg-(--drawer-background)` |
+
+Light mode: all three are `oklch(1 0 0)` (white). Dark mode: all three are `oklch(23.075% 0.00003 271.152)` — slightly elevated vs `--background` (`oklch(14.958% …)`).
+
+**Do not** use `bg-background` on sticky dialog/drawer footers — it mismatches the overlay surface. Match the host component:
+
+```tsx
+<ResponsiveFooter className="sticky bottom-0 z-10 shrink-0 border-t border-border/50 bg-(--drawer-background) px-0 pb-0 pt-3 md:bg-(--dialog-background)">
+  {/* Cancel / Save */}
+</ResponsiveFooter>
+```
+
+- **Mobile drawer** (`ResponsiveDialog` → `DrawerFooter`): `bg-(--drawer-background)`
+- **Desktop dialog** (`ResponsiveDialog` → `DialogFooter`): `md:bg-(--dialog-background)`
+- **Sheet-only** overlays: `bg-(--sheet-background)`
+
+Shared-ui sets overlay roots automatically; footers/sticky sections inside portaled content must opt in explicitly.
+
+### Long-form `ResponsiveDialog` layout
+
+For forms with many fields (e.g. long textareas):
+
+```tsx
+<ResponsiveContent
+  pluginName={metadata.name}
+  className="flex h-[90vh] max-h-[90vh] w-full flex-col gap-0 overflow-hidden md:h-auto md:max-h-[90vh] md:max-w-[480px] md:gap-6"
+>
+  <ResponsiveHeader className="shrink-0">{/* title */}</ResponsiveHeader>
+  <div className="min-h-0 flex-1 overflow-y-auto py-2">{/* fields */}</div>
+  <ResponsiveFooter className="sticky bottom-0 z-10 shrink-0 gap-2 border-t border-border/50 bg-(--drawer-background) px-0 pb-0 pt-3 md:bg-(--dialog-background)">
+    {/* actions */}
+  </ResponsiveFooter>
+</ResponsiveContent>
 ```
 
 ## Custom Theme Tokens (`index.css`)
@@ -63,7 +153,7 @@ Components like Modals, Dialogs, and Sheets are often "portaled" to the document
 Declare plugin-specific colors as CSS variables on `:root`, then map them into Tailwind via `@theme inline` as `--color-*`. The base app uses Tailwind CSS with the **class** dark-mode strategy (`class="dark"` on `<html>`).
 
 > [!IMPORTANT]
-> **Do NOT** hand-write `[data-plugin="your-plugin"]` around custom variables. The Vite CSS isolation plugin already scopes plugin styles. Authors must declare light tokens on `:root` and dark overrides on `.dark` only.
+> **Do NOT** hand-write `[data-plugin="my-plugin"]` around custom variables. The Vite CSS isolation plugin already scopes plugin styles. Authors must declare light tokens on `:root` and dark overrides on `.dark` only.
 
 ### Light + dark tokens
 
@@ -74,24 +164,24 @@ Declare plugin-specific colors as CSS variables on `:root`, then map them into T
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --rp-color-primary: #00c896;
-  --rp-color-bg-light: #f5f7f8;
-  --rp-text-main: #1a1a1a;
-  --rp-text-muted: #8e8e93;
+  --mp-color-primary: #00c896;
+  --mp-color-bg-light: #f5f7f8;
+  --mp-text-main: #1a1a1a;
+  --mp-text-muted: #8e8e93;
 }
 
 .dark {
-  --rp-color-primary: #00d6a3;
-  --rp-color-bg-light: #0b0b0c;
-  --rp-text-main: #f5f5f7;
-  --rp-text-muted: #8e8e93;
+  --mp-color-primary: #00d6a3;
+  --mp-color-bg-light: #0b0b0c;
+  --mp-text-main: #f5f5f7;
+  --mp-text-muted: #8e8e93;
 }
 
 @theme inline {
-  --color-background: var(--rp-color-bg-light);
-  --color-foreground: var(--rp-text-main);
-  --color-primary: var(--rp-color-primary);
-  --color-muted-foreground: var(--rp-text-muted);
+  --color-background: var(--mp-color-bg-light);
+  --color-foreground: var(--mp-text-main);
+  --color-primary: var(--mp-color-primary);
+  --color-muted-foreground: var(--mp-text-muted);
 }
 ```
 
@@ -116,8 +206,8 @@ Persist the preference in `localStorage` and expose a light / dark / system cont
 **Incorrect:**
 ```css
 /* Do not scope tokens yourself — the build does this */
-[data-plugin="reward-point"] {
-  --rp-teal: #00a191;
+[data-plugin="my-plugin"] {
+  --mp-teal: #00a191;
 }
 ```
 
@@ -125,7 +215,7 @@ Persist the preference in `localStorage` and expose a light / dark / system cont
 ```tsx
 <section className="bg-background text-foreground">
   <header className="bg-black text-white">...</header>
-  <p className="text-primary">Available points</p>
+  <p className="text-primary">My item title</p>
   <p className="text-muted-foreground">Label</p>
 </section>
 ```

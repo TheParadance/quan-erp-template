@@ -12,6 +12,14 @@ Provides high-level metadata about the entity class to the AI system to improve 
 **Options:**
 - `description`: A clear, human-readable description of what this entity represents.
 
+```typescript
+@AIEntityInfo({ description: "An item owned by my-plugin" })
+@Entity("my-plugin-item")
+export class MyItemEntity extends BaseEntity {
+    // ...
+}
+```
+
 ### `@AIExcludeEntity()`
 Completely excludes the entire entity from being scanned or indexed by the AI system. Use this for high-security entities that must remain completely invisible to automated AI processes.
 
@@ -28,6 +36,6 @@ password: string
 ---
 
 ## Usage Best Practices
-- **Isolation**: Always use the plugin name as a prefix for `@Entity` names to ensure namespace isolation.
+- **Isolation**: Always use the plugin name as a prefix for `@Entity` names to ensure namespace isolation (e.g. `@Entity("my-plugin-item")`).
 - **BaseEntity**: Always extend `BaseEntity` from `@quan-erp/shared-backend-core`.
-- **Relationship Typing**: Use `InstanceType<typeof RelatedEntity>` for relationship property types to avoid circular dependency issues.
+- **Relationship Typing**: Use `InstanceType<typeof RelatedEntity>` for relationship property types to avoid circular dependency issues (e.g. `InstanceType<typeof MyOtherEntity>`).

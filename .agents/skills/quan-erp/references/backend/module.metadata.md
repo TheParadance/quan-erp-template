@@ -1,6 +1,6 @@
 # Module Metadata Reference
 
-The `module.metadata.json` file is a mandatory file for every plugin. It defines the plugin's identify, versioning, and dependencies. It is located at the root of the plugin directory: `plugins/<plugin-name>/module.metadata.json`.
+The `module.metadata.json` file is a mandatory file for every plugin. It defines the plugin's identity, versioning, and dependencies. It is located at the root of the plugin directory: `plugins/<plugin-name>/module.metadata.json` (e.g. `plugins/my-plugin/module.metadata.json`).
 
 ## Configuration Fields
 
@@ -11,27 +11,40 @@ The `module.metadata.json` file is a mandatory file for every plugin. It defines
 - **`moduleEntryObject`**: (String) The name of the exported module class in the backend (typically `"Module"`).
 - **`requiredBasedVersion`**: (String) The minimum version of the core platform required by this plugin.
 - **`pluginDependencies`**: (Object) A list of other plugins that are **strictly required** for this plugin to function. Each entry must specify a version range (Semantic Versioning).
-    - *Example*: `"products": "^1.0.0"` means the plugin requires the `products` plugin with at least version 1.0.0.
+    - *Example*: `"other-plugin": "^1.0.0"` means the plugin requires `other-plugin` with at least version 1.0.0.
 
 ## Example: `module.metadata.json`
 
 ```json
 {
-    "name": "inventory",
+    "name": "my-plugin",
     "type": "",
     "pluginVersion": "1.0.0",
-    "description": "Inventory management system",
+    "description": "Sample my-plugin for local development",
     "moduleEntryObject": "Module",
     "requiredBasedVersion": "1.0.0",
     "pluginDependencies": {
-         "products": "^1.0.0",
-         "accounting": "^1.0.0"
+         "other-plugin": "^1.0.0"
     }
+}
+```
+
+For a plugin with no hard dependencies, use an empty object:
+
+```json
+{
+    "name": "my-plugin",
+    "type": "",
+    "pluginVersion": "1.0.0",
+    "description": "Sample my-plugin for local development",
+    "moduleEntryObject": "Module",
+    "requiredBasedVersion": "1.0.0",
+    "pluginDependencies": {}
 }
 ```
 
 ## Importance of Dependencies
 
 The `pluginDependencies` field is critical because:
-1. It ensures the core system loads dependent plugins *before* the current plugin.
+1. It ensures the platform loads dependent plugins *before* the current plugin.
 2. It prevents a plugin from starting if its required dependencies are missing or have incompatible versions.

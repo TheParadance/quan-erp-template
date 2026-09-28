@@ -8,14 +8,14 @@ This document explains how to trigger system notifications and push notification
 
 ## 1. Injection
 
-The `NotificationService` is a built-in core service. To use it in your plugin, inject it using the `@Inject` decorator with the `ContainerRegistryManager.BUILTIN_PLUGIN` scope.
+The `NotificationService` is a platform built-in. To use it in your plugin, inject it using the `@Inject` decorator with the `ContainerRegistryManager.BUILTIN_PLUGIN` scope.
 
 ```typescript
-import { Inject, ContainerRegistryManager } from "@quan-erp/shared-backend-core";
+import { Inject, ContainerRegistryManager, Service } from "@quan-erp/shared-backend-core";
 import { NotificationService } from "@quan-erp/shared-backend-core";
 
 @Service()
-export class YourService {
+export class MyService {
     @Inject(NotificationService, ContainerRegistryManager.BUILTIN_PLUGIN)
     private notificationService: NotificationService;
 }
@@ -25,27 +25,28 @@ export class YourService {
 
 Use the `send` method to dispatch a notification. You can target specific users or roles.
 
-### Example: Notifying Participants of an Event
+### Example: Notifying users about an item update
 
 ```typescript
 import metadata from "../../../module.metadata.json" with { type: "json" };
+// metadata.name === "my-plugin"
 
-async notifyParticipants(event: CalendarEventEntity) {
-    if (!event.participants?.length) return;
+async notifyItemUpdated(item: MyItemEntity) {
+    if (!item.assigneeIds?.length) return;
 
     await this.notificationService.send({
-        userIds: event.participants.map(p => p.id),
-        title: "Event Update",
-        subtitle: event.summary,
-        body: `The event "${event.summary}" has been updated.`,
-        topic: "calendar.event_updated",
-        url: `/app/calendar/?date=${event.startDate}`, // Deep link for in-app navigation
+        userIds: item.assigneeIds,
+        title: "Item Update",
+        subtitle: item.name,
+        body: `The item "${item.name}" has been updated.`,
+        topic: "my-plugin.item_updated",
+        url: `/app/my-plugin/item/${item.id}`, // Deep link for in-app navigation
         pluginName: metadata.name, // Matches the plugin identity
         data: {
             // Essential for mobile/push notification routing
-            url: `/app/calendar/?date=${event.startDate}`,
+            url: `/app/my-plugin/item/${item.id}`,
             pluginName: metadata.name,
-            topic: "event.update"
+            topic: "item.update"
         }
     });
 }
@@ -75,4 +76,3 @@ To implement the frontend receiver for your notifications, refer to the [Notific
 1.  **Backend**: Call `notificationService.send` with a specific `pluginName` and `topic`.
 2.  **Frontend**: Register a callback for the same `pluginName` in the plugin's `register` method in `index.tsx`.
 3.  **Action**: The callback executes immediately when the notification is received (e.g., refreshing a list or automatically navigating to a deep link).
-

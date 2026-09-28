@@ -18,56 +18,48 @@ The `@AITool` decorator accepts an object with the following properties:
 
 ### Example Implementation
 
-In your service (e.g., `currency-exchange.service.ts`):
+In your service (e.g., `my-item.service.ts`) for plugin `my-plugin`:
 
 ```typescript
 import { Service, AITool } from "@quan-erp/shared-backend-core";
 
 @Service()
-export class CurrencyExchangeService {
+export class MyItemService {
     
     /**
-     * Retrieves the latest exchange rate between two currencies.
+     * Retrieves an item by id.
      */
     @AITool({
         requiredApiPermission: [
-            { method: 'get', url: '/currency-exchange-rate/' }
+            { method: 'get', url: '/my-plugin/item/' }
         ],
         argParser: (args: any) => {
             // Convert raw AI arguments to the expected service parameters
-            return [Number(args.fromCurrencyId), Number(args.toCurrencyId)]
+            return [Number(args.itemId)]
         },
         toolDetail: {
             type: 'function',
             function: {
-                name: "get-exchange-rate",
-                description: "Get the exchange rate between two currencies.",
+                name: "get-my-item",
+                description: "Get an item by id.",
                 parameters: {
                     type: "object",
                     properties: {
-                        fromCurrencyId: {
+                        itemId: {
                             type: "number",
-                            description: "The ID of the source currency.",
-                        },
-                        toCurrencyId: {
-                            type: "number",
-                            description: "The ID of the target currency.",
+                            description: "The ID of the item.",
                         },
                     },
-                    required: ["fromCurrencyId", "toCurrencyId"],
+                    required: ["itemId"],
                 },
             },
         }
     })
-    async getRate(fromCurrencyId: number, toCurrencyId: number): Promise<any> {
+    async getItem(itemId: number): Promise<any> {
         // Implementation logic
         const data = await this.repo.findOne({
             where: {
-                fromCurrencyId,
-                toCurrencyId,
-            },
-            order: {
-                createDate: "DESC",
+                id: itemId,
             },
         });
         return data;
@@ -78,7 +70,7 @@ export class CurrencyExchangeService {
 ## Best Practices
 
 1. **Descriptive Metadata**: The `name` and `description` in `toolDetail.function` are critical. They tell the AI model *when* and *how* to use the tool.
-2. **Naming Convention**: Tool names **MUST** be hyphen-based (kebab-case) (e.g., `hr-search-employees`).
+2. **Naming Convention**: Tool names **MUST** be hyphen-based (kebab-case) (e.g., `get-my-item`).
 3. **Schema Definition**: Provide a clear JSON schema for `parameters` to ensure the AI model provides correctly structured input.
 4. **Type Conversion**: Always use `argParser` to sanitize and convert types (e.g., ensuring IDs are numbers) before they reach your service logic.
 5. **Security**: Ensure `requiredApiPermission` accurately reflects the permissions needed for the operation.

@@ -8,15 +8,17 @@ Every API call from the frontend **MUST** be prefixed with the plugin name as de
 
 > [!IMPORTANT]
 > Failure to include the plugin-name prefix will result in 404 errors, as the backend router uses this prefix to direct the request to the correct plugin module.
+>
+> **Backend vs frontend asymmetry:** Backend `@Controller` paths must **not** include the plugin name (the framework adds it). Frontend URLs **must** include it. If the API docs page shows `/PLUGIN/PLUGIN` or `GET /my-plugin/my-plugin/...`, the controller incorrectly embedded `metadata.name` — fix the backend to `@Controller("/item")`, not the frontend.
 
 ### Path Structure
 `/<plugin-name>/<controller-path>/<endpoint-path>`
 
 **Example**:
-- Plugin Name: `loan`
-- Controller: `@Controller("/calculator")`
-- Endpoint: `@Post("/calculate")`
-- **Frontend Path**: `/loan/calculator/calculate`
+- Plugin Name: `my-plugin`
+- Controller: `@Controller("/item")` ← resource only (not `/my-plugin/item`)
+- Endpoint: `@Post("/save")`
+- **Frontend Path**: `/my-plugin/item/save` ← includes plugin name
 
 ## Implementation Guide
 
@@ -47,15 +49,15 @@ Define your API calls in `.api.ts` files within your feature or page directories
 ```typescript
 import { getAxiosClient } from "../lib/axios";
 
-export const fetchData = async (id: string) => {
+export const fetchItem = async (id: string) => {
     // Correct: prefixed with plugin name 'my-plugin'
-    const response = await getAxiosClient().get(`/my-plugin/data/${id}`);
+    const response = await getAxiosClient().get(`/my-plugin/item/${id}`);
     return response.data;
 };
 
-export const saveData = async (data: any) => {
+export const saveItem = async (data: any) => {
     // Correct: prefixed with plugin name 'my-plugin'
-    const response = await getAxiosClient().post("/my-plugin/save", data);
+    const response = await getAxiosClient().post("/my-plugin/item/save", data);
     return response.data;
 };
 ```
@@ -63,4 +65,4 @@ export const saveData = async (data: any) => {
 ## Best Practices
 1. **Never Hardcode Base URLs**: Use the provided Axios client which is pre-configured.
 2. **Type Safety**: Define interfaces for Request DTOs and Response objects to ensure frontend-backend type consistency.
-3. **Leading Slash**: Always start your path with a leading slash (e.g., `/plugin-name/...`).
+3. **Leading Slash**: Always start your path with a leading slash (e.g., `/my-plugin/...`).

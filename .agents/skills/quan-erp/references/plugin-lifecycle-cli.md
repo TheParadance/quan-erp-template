@@ -32,13 +32,13 @@ quan-erp build:dev:log <plugin-folder-name>
 The system distinguishes between where code is developed, where it is available for installation, and where it is currently active.
 
 ### Source Code (`plugins/`)
-Where the plugin source code resides (e.g., `plugins/inventory`, `plugins/accounting`).
+Where the plugin source code resides (e.g., `plugins/my-plugin`, `plugins/other-plugin`).
 
 ### Available for Installation (`base/available-plugins/`)
 When a plugin is built, its artifacts are packaged here:
 ```bash
 base/available-plugins/
-└── <plugin-name>/
+└── my-plugin/
     └── <version>/  (e.g., 1.0.0)
         ├── backend/
         ├── frontend/
@@ -49,7 +49,7 @@ base/available-plugins/
 When a user "installs" a plugin through the ERP interface, the system moves it to the active directory:
 ```bash
 base/backend/installed-plugins/
-└── <plugin-name>/
+└── my-plugin/
     ├── backend/
     ├── frontend/
     └── module.metadata.json

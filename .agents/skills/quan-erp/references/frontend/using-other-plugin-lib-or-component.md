@@ -13,7 +13,7 @@ Every frontend plugin is designed to be both a standalone module and a reusable 
 
 ## Consumer-Side Implementation
 
-To use components from another plugin (e.g., using `products` features inside the `inventory` plugin):
+To use components from another plugin (e.g., using `other-plugin` features inside `my-plugin`):
 
 ### 1. Register the Dependency
 Add the target plugin's package to your `frontend/package.json`. Use the standard naming convention: `@quan-erp-plugins/<plugin-name>-frontend`.
@@ -22,10 +22,10 @@ Add the target plugin's package to your `frontend/package.json`. Use the standar
 > **AI Agent Role**: If you are an AI agent tasked with using components from another plugin, you MUST install the corresponding package `@quan-erp-plugins/<plugin-name>-frontend` in the consumer plugin's `frontend` directory. If only the frontend API/components are needed, you only need to install the frontend package.
 
 ```json
-// plugins/inventory/frontend/package.json
+// plugins/my-plugin/frontend/package.json
 {
   "dependencies": {
-    "@quan-erp-plugins/products-frontend": "^1.0.0-beta.2"
+    "@quan-erp-plugins/other-plugin-frontend": "^1.0.0"
   }
 }
 ```
@@ -34,13 +34,13 @@ Add the target plugin's package to your `frontend/package.json`. Use the standar
 You can now import any exported component, hook, or utility from that plugin.
 
 ```tsx
-import { ProductSelector } from "@quan-erp-plugins/products-frontend";
+import { OtherItemSelector } from "@quan-erp-plugins/other-plugin-frontend";
 
-export function InventoryAdjustmentPage() {
+export function MyPage() {
     return (
         <PageContent>
-            {/* Using a component from the Products plugin */}
-            <ProductSelector onSelect={(product) => console.log(product)} />
+            {/* Using a component from other-plugin */}
+            <OtherItemSelector onSelect={(item) => console.log(item)} />
         </PageContent>
     );
 }
@@ -66,15 +66,15 @@ export function InventoryAdjustmentPage() {
 1.  **Check Metadata**: Always ensure that any external plugin dependency is also listed in your root `module.metadata.json` under `pluginDependencies` WITH its version. This is critical for the platform to handle loading order and version compatibility.
     ```json
     "pluginDependencies": {
-      "payment-method": "^1.0.0"
+      "other-plugin": "^1.0.0"
     }
     ```
 2.  **Backend Externalization**: When using other plugins in the backend, you **MUST** externalize their packages in your `rollup.config.js`. This prevents them from being bundled into your plugin's distribution, allowing the platform to share the singleton instance.
     ```javascript
     const EXTERNAL = [
         ...external,
-        "@quan-erp-plugins/payment-method-backend",
+        "@quan-erp-plugins/other-plugin-backend",
     ];
     ```
 3.  **Avoid Circular Dependencies**: Never have Plugin A depend on Plugin B while Plugin B depends on Plugin A.
-3.  **Graceful Fallbacks**: If a component from another plugin might not be available (e.g., if the dependency is optional), handle the missing component gracefully.
+4.  **Graceful Fallbacks**: If a component from another plugin might not be available (e.g., if the dependency is optional), handle the missing component gracefully.

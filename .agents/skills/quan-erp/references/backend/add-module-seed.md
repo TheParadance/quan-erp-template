@@ -16,7 +16,7 @@ dev database.
 
 ## Prerequisites
 
-- Local developing setup is active (`prepare-local-dev.sh` / local core workflow)
+- Local developing setup is active (local base / Docker workflow)
 - `psql` available
 - Postgres reachable with values from `base/backend/.env`
 
@@ -91,7 +91,7 @@ WHERE name = '<name>' AND plugin_version = '<plugin_version>';
 5. Run the `INSERT` with `psql` using `.env` credentials.
 6. Verify with a `SELECT` and report `id` / `name` / `displayName` to the user.
 
-One-shot example:
+One-shot example (plugin `my-plugin`):
 
 ```bash
 export PGPASSWORD="$DB_PASSWORD"
@@ -99,7 +99,7 @@ psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d "$DB_SCHEMA" -v ON_ERROR_S
 INSERT INTO module
 ("name","displayName","description","unInstallable","module_entry_object","plugin_version","dependencies","base_version","version")
 VALUES
-('reward-point','Reward Point','Reward point management plugin',true,'Module','1.0.0','{}','1.0.0',1);
+('my-plugin','My Plugin','Sample my-plugin for local development',true,'Module','1.0.0','{}','1.0.0',1);
 SQL
 ```
 
