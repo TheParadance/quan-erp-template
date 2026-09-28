@@ -97,7 +97,7 @@ services:
       MAX_ROLE_LIMIT: 5
       MAX_SUBSCRIPTION_GRACE_PERIOD_DAYS: 14
       DEVELOPER_CONFIG_PASSWORD: 123456
-      SUBSCRIPTION_END_DATE: "2026-01-01"
+      SUBSCRIPTION_END_DATE: "9999-01-01"
 
     volumes:
       - ./backend/installed-plugins:/app/installed-plugins
