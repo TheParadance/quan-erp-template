@@ -148,6 +148,8 @@ services:
       - "80:80"
     networks:
       - app-network
+    volumes:
+      - ./data/frontend/web-env.json:/usr/share/nginx/html/web-env.json
 
 secrets:
   npmrc:
