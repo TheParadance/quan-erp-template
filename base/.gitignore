@@ -1,5 +1,6 @@
-data
-db-data
+data/db-data
+data/redis
+data/temp
 backend/installed-plugins
 backend/logs
 available-plugins/**
