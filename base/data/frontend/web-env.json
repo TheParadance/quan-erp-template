@@ -1,3 +1,10 @@
 {
-    "VITE_MODE": "dev"
+    "VITE_MODE": "dev",
+    "VITE_INITIAL_ROUTING": "/app/",
+    "VITE_APP_NAME": "Quark ERP",
+    "VITE_BASE_VERSION": "v1.1.4-beta-dev.0",
+    "VITE_CORE_VERSION": "v1.1.4-beta-dev.0",
+    "VITE_BACKEND_API": "http://localhost:8080",
+    "VITE_DEV_TOOL_WEBSOCKET_URL": "ws://localhost:8081",
+    "VITE_MULTI_ORGANIZATION": "false"
 }
