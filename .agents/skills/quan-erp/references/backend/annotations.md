@@ -507,19 +507,25 @@ async removeItem(itemId: number) { ... }
 
 ## AI Integration
 
-### `@AITool(options: AIToolOptions)`
-Marks a service method as a tool that can be discovered and executed by the AI assistant. **Tool names MUST be hyphen-based (kebab-case)**. For a deep dive, see **[Adding AI Tools](./add-ai-tools.md)**.
+### `@AITool(options: AIToolOption)`
+Marks a service method as a tool that can be discovered and executed by the AI assistant / MCP clients. **Tool names MUST be hyphen-based (kebab-case)**. For a deep dive (including `mcpAnnotations` conventions), see **[Adding AI Tools](./add-ai-tools.md)**.
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `requiredApiPermission` | `Permission[]` | Array of `{ method, url }` required to run this tool. |
 | `argParser` | `callback` | Function to map AI-provided arguments to method parameters. |
+| `mcpAnnotations` | `MCPAIToolAnnotations` (optional) | MCP hints: `readOnlyHint`, `openWorldHint`, `destructiveHint` (sibling of `toolDetail`, not inside it). |
 | `toolDetail` | `object` | OpenAI-compatible function definition (name, description, parameters). |
 
 ```typescript
 @AITool({
     requiredApiPermission: [{ method: 'get', url: '/my-plugin/item/' }],
     argParser: (args) => [args.itemId],
+    mcpAnnotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+    },
     toolDetail: {
         type: 'function',
         function: {

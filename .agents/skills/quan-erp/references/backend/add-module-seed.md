@@ -4,9 +4,31 @@ Insert a row into the `module` table so a plugin appears in the local Quan ERP
 dev database.
 
 > [!IMPORTANT]
-> **Development setup only.** Read DB connection values from
-> `base/backend/.env`. Never run this against UAT/prod, remote hosts, or any DB
-> that is not the local developing setup.
+> **Development setup only.** Prefer the CLI. Never run this against UAT/prod,
+> remote hosts, or any DB that is not the local developing setup.
+
+## Preferred: CLI
+
+```bash
+quan-erp plugin seed <plugin-name>
+# e.g. quan-erp plugin seed my-plugin
+# alias: quan-erp seed-plugin …
+# Optional overrides (never hardcode real passwords in docs or commits):
+# quan-erp plugin seed my-plugin -u postgres -d quan-erp -p "$POSTGRES_PASSWORD"
+```
+
+Reads `plugins/<plugin-name>/module.metadata.json` and seeds (or updates) the
+`module` table using Postgres credentials from `base/docker-compose.yaml`
+(`db` service) via `docker compose … exec db psql`. Override with `-u` / `-d` /
+`-p` (or `--user` / `--database` / `--password`) — pass passwords via env vars
+only; never paste them into docs, chat, or git. Falls back to host `psql`
+on `127.0.0.1` if compose exec fails.
+
+- Requires local stack up (`quan-erp run dev`) so the `db` container is running
+- Prompts for display name (and description when metadata is empty)
+- If `(name, plugin_version)` already exists, asks before `UPDATE`
+
+Also offered as an optional step at the end of `quan-erp plugin new` / `new` / `new-plugin`.
 
 ## When to use
 
@@ -14,34 +36,47 @@ dev database.
 - A new plugin exists under `plugins/<name>/` and needs a `module` row
 - User points at the README module `INSERT` pattern
 
-## Prerequisites
+## Manual fallback (psql)
 
-- Local developing setup is active (local base / Docker workflow)
-- `psql` available
-- Postgres reachable with values from `base/backend/.env`
+Use only if the CLI is unavailable. Credentials come from
+`base/docker-compose.yaml` (`db` → `POSTGRES_*`) or `base/backend/.env`.
 
-## DB credentials (from `base/backend/.env`)
+### Prerequisites
 
-Read these keys (do **not** hardcode passwords in the skill or commits):
+- Local developing setup is active (`quan-erp run dev` / Docker workflow)
+- `psql` available **or** docker compose `db` container reachable
+- Postgres reachable with local/dev values
 
-| Env key | Use |
+### DB credentials
+
+**Prefer compose** (`base/docker-compose.yaml` → `db` service):
+
+| Compose key | Typical local value |
 |---|---|
-| `DB_HOST` | host (expect `localhost` for local/dev) |
-| `DB_PORT` | port |
-| `DB_USERNAME` | user |
-| `DB_PASSWORD` | password |
-| `DB_SCHEMA` | database name |
+| `POSTGRES_USER` | `postgres` |
+| `POSTGRES_PASSWORD` | from compose (do not hardcode in commits) |
+| `POSTGRES_DB` | `quan-erp` |
+| host port | `5432` (mapped `5432:5432`) |
+
+Or from `base/backend/.env`: `DB_HOST` / `DB_PORT` / `DB_USERNAME` / `DB_PASSWORD` / `DB_SCHEMA`.
 
 **Guardrails before connecting:**
 
-1. Confirm `DB_HOST` is a local/dev host (`localhost` / `127.0.0.1`).
+1. Confirm the target is local/dev (`localhost` / `127.0.0.1` / docker compose `db`).
 2. If host is not local, **stop** and ask the user — this flow is local/dev only.
-3. Prefer loading password via `PGPASSWORD` from `.env` for the shell call; do not echo it into chat logs unnecessarily.
+3. Prefer loading password via `PGPASSWORD` / compose env; do not echo it into chat logs unnecessarily.
 
-Example (after reading `.env`):
+Docker one-shot (matches the CLI):
 
 ```bash
-# From repo root — substitute values read from base/backend/.env
+docker compose -f base/docker-compose.yaml exec -T \
+  -e PGPASSWORD="$POSTGRES_PASSWORD" \
+  db psql -U postgres -d quan-erp -v ON_ERROR_STOP=1
+```
+
+Host example (after reading compose or `.env`):
+
+```bash
 export PGPASSWORD="$DB_PASSWORD"
 psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d "$DB_SCHEMA"
 ```
@@ -84,33 +119,20 @@ WHERE name = '<name>' AND plugin_version = '<plugin_version>';
 
 ## Agent flow
 
-1. Confirm the target is **local developing** DB via `base/backend/.env`.
-2. Identify the plugin (`plugins/<name>/module.metadata.json` and/or user-provided values).
-3. Ask for `displayName` if not provided.
-4. Check whether the module row already exists.
-5. Run the `INSERT` with `psql` using `.env` credentials.
-6. Verify with a `SELECT` and report `id` / `name` / `displayName` to the user.
-
-One-shot example (plugin `my-plugin`):
-
-```bash
-export PGPASSWORD="$DB_PASSWORD"
-psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d "$DB_SCHEMA" -v ON_ERROR_STOP=1 <<'SQL'
-INSERT INTO module
-("name","displayName","description","unInstallable","module_entry_object","plugin_version","dependencies","base_version","version")
-VALUES
-('my-plugin','My Plugin','Sample my-plugin for local development',true,'Module','1.0.0','{}','1.0.0',1);
-SQL
-```
+1. Prefer `quan-erp plugin seed <plugin-name>` (interactive prompts for display name / update confirm).
+2. If CLI is unavailable: confirm local/dev DB via compose or `base/backend/.env`, then run `psql` / `docker compose exec db psql`.
+3. Verify with a `SELECT` and report `id` / `name` / `displayName` to the user.
 
 ## Do not
 
 - Seed UAT/prod or non-local databases
+- Expose, hardcode, or paste passwords (docs, chat, commits, command history examples) — use `$POSTGRES_PASSWORD` / `$DB_PASSWORD` / compose env only
 - Commit `.env`, passwords, or connection dumps
 - Invent extra columns beyond the README seed shape unless the live `\d module` schema requires it
 - Skip the existence check when seeding a known plugin name
 
 ## Related
 
+- CLI: [cli.md](../cli.md) (`plugin seed` / `seed-plugin`)
 - Plugin data seeding (`@OnInit` / `DataSeedHistoryService`): [how-to-seed-data.md](./how-to-seed-data.md)
 - Module metadata: [module.metadata.md](./module.metadata.md)

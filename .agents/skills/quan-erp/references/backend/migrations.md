@@ -77,12 +77,12 @@ export default class MyPlugin implements IPlugin {
 }
 ```
 
-## 3. Optional: TypeORM CLI generate helper
+## 3. Generate with the CLI (preferred)
 
-`source.ts` is only for local CLI generation (`npm run migration:generate`). Fill credentials for your local DB:
+Keep `source.ts` credentials empty in git. List plugin entities (plus `CORE_ENTITIES` / `BUILTIN_ENTITIES` as needed):
 
 ```typescript
-import { BUILTIN_ENTITIES } from "@quan-erp/shared-backend-core";
+import { BUILTIN_ENTITIES, CORE_ENTITIES } from "@quan-erp/shared-backend-core";
 import { DataSource } from "typeorm";
 import { MyItemEntity } from "../schema/my-item.entity.js";
 
@@ -93,20 +93,35 @@ export const AppDataSource = new DataSource({
     username: "",
     password: "",
     database: "",
-    entities: [...BUILTIN_ENTITIES, MyItemEntity],
+    entities: [...CORE_ENTITIES, ...BUILTIN_ENTITIES, MyItemEntity],
 });
 ```
 
 ```bash
-# from plugins/my-plugin/backend
-npm run migration:generate
+# from project root (DB must match base/docker-compose.yaml)
+quan-erp plugin migration create my-plugin
+quan-erp plugin migration create my-plugin -h localhost -u postgres -p secret -d quan-erp
 ```
 
-Generated SQL still needs to be wrapped in an `IDatabaseMigration` class and listed in `getMigrations()`.
+The CLI:
+
+1. Temporarily fills `source.ts` from compose Postgres credentials
+2. Runs TypeORM `migration:generate`
+3. Writes `migration-<8hex>-<pluginVersion>.ts` as `IDatabaseMigration` with `getSource()` → `{ plugin: "default", name: "default" }`
+4. Registers the class in `backend/src/index.ts` `getMigrations()`
+5. Restores `source.ts` credentials to empty strings
+
+To delete migrations interactively (files + `getMigrations()`):
+
+```bash
+quan-erp plugin migration remove my-plugin
+```
+
+Manual `npm run migration:generate` still works for debugging, but you must wrap SQL and register yourself.
 
 ## Best practices
 
 1. Keep `getName()` stable — renaming breaks migration history.
 2. Prefer explicit `up` / `down` SQL for plugin tables you own.
-3. Always register new migrations in `getMigrations()`.
+3. Prefer `quan-erp plugin migration create` so wrap + `getMigrations()` registration stay consistent.
 4. Do not put secrets in committed `source.ts`; leave placeholders for local use.
