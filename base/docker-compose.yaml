@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile
       secrets:
         - npmrc
-    image: theparadance/quan-erp-base-backend:1.1.6
+    image: theparadance/quan-erp-base-backend:1.1.7
     platform: linux/amd64
     container_name: backend
     ports:
@@ -35,8 +35,8 @@ services:
     environment:
       NODE_ENV: production
 
-      MODE: dev
-      BASE_VERSION: 1.1.6
+      MODE: prod
+      BASE_VERSION: 1.1.7
       ORGANIZATION_ID: quan-erp
 
       FRONTEND_URL: http://localhost
@@ -62,7 +62,7 @@ services:
       DB_PASSWORD: 123456
       DB_PORT: 5432
       DB_SCHEMA: quan-erp
-      DB_SYNC: true
+      DB_SYNC: false
 
       # redis
       REDIS_HOST: redis
@@ -139,7 +139,7 @@ services:
       secrets:
         - npmrc
     platform: linux/amd64
-    image: theparadance/quan-erp-base-frontend:1.1.6
+    image: theparadance/quan-erp-base-frontend:1.1.7
     container_name: frontend
     environment:
       VITE_BACKEND_API: http://192.168.5.16:8080
