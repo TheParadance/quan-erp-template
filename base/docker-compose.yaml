@@ -33,9 +33,9 @@ services:
       - "8080:8080"
       - "8081:8081"
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
 
-      MODE: prod
+      MODE: dev
       BASE_VERSION: 1.1.9
       ORGANIZATION_ID: quan-erp
 
