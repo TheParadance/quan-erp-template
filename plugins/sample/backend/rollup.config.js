@@ -71,4 +71,8 @@ const bundleMode = {
     },
 };
 
+if (!bundleMode[MODE]) {
+    throw new Error(`Unknown or missing MODE="${MODE ?? ''}". Use MODE=prod|dev|export.`);
+}
+
 export default bundleMode[MODE];

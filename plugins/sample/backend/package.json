@@ -5,9 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "release:beta": "npm publish --tag beta",
-    "build:prod": "MODE=prod rm -rf dist && rollup -c && cp -r ./assets dist/",
-    "build:dev": "MODE=dev rm -rf dist && rollup -c && cp -r ./assets dist/",
-    "build:export": "MODE=export rm -rf dist && rollup -c && rm -r dist/assets",
+    "build:prod": "rm -rf dist && MODE=prod rollup -c && cp -r ./assets dist/",
+    "build:dev": "rm -rf dist && MODE=dev rollup -c && cp -r ./assets dist/",
+    "build:export": "rm -rf dist && MODE=export rollup -c && rm -r dist/assets",
     "migration:generate": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:generate src/migrations -d src/migrations/source.ts"
   },
   "keywords": [],
@@ -27,8 +27,8 @@
     "dist"
   ],
   "devDependencies": {
-    "@quan-erp/shared-backend-core": "1.1.8",
-    "@quan-erp/shared-types": "1.1.8",
+    "@quan-erp/shared-backend-core": "1.1.9",
+    "@quan-erp/shared-types": "1.1.9",
     "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-json": "^6.1.0",
