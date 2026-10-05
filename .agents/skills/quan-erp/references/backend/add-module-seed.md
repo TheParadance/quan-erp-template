@@ -11,18 +11,25 @@ dev database.
 
 ```bash
 quan-erp plugin seed <plugin-name>
-# e.g. quan-erp plugin seed my-plugin
+# e.g. quan-erp plugin seed fujian
 # alias: quan-erp seed-plugin …
-# Optional overrides (never hardcode real passwords in docs or commits):
-# quan-erp plugin seed my-plugin -u postgres -d quan-erp -p "$POSTGRES_PASSWORD"
+
+# Optional overrides (never paste real passwords into docs, chat, or commits):
+quan-erp plugin seed <plugin-name> -u postgres -d quan-erp
+# Password: omit `-p` and let the CLI use compose/`db` env, or pass via a
+# local shell variable — e.g. -p "$POSTGRES_PASSWORD" — not a literal string.
 ```
 
 Reads `plugins/<plugin-name>/module.metadata.json` and seeds (or updates) the
 `module` table using Postgres credentials from `base/docker-compose.yaml`
 (`db` service) via `docker compose … exec db psql`. Override with `-u` / `-d` /
-`-p` (or `--user` / `--database` / `--password`) — pass passwords via env vars
-only; never paste them into docs, chat, or git. Falls back to host `psql`
+`-p` (or `--user` / `--database` / `--password`). Falls back to host `psql`
 on `127.0.0.1` if compose exec fails.
+
+After a successful seed/update, prompts **Flush Redis cache (FLUSHALL)?**
+(default yes). Auth comes from the compose `redis` service (`--requirepass`);
+runs `docker compose … exec redis redis-cli FLUSHALL` (host `redis-cli`
+fallback). Declining or a Redis failure does not undo the DB seed.
 
 - Requires local stack up (`quan-erp run dev`) so the `db` container is running
 - Prompts for display name (and description when metadata is empty)
@@ -54,7 +61,7 @@ Use only if the CLI is unavailable. Credentials come from
 | Compose key | Typical local value |
 |---|---|
 | `POSTGRES_USER` | `postgres` |
-| `POSTGRES_PASSWORD` | from compose (do not hardcode in commits) |
+| `POSTGRES_PASSWORD` | from compose env only — **never** copy the real value into docs/chat/commits |
 | `POSTGRES_DB` | `quan-erp` |
 | host port | `5432` (mapped `5432:5432`) |
 
@@ -64,11 +71,12 @@ Or from `base/backend/.env`: `DB_HOST` / `DB_PORT` / `DB_USERNAME` / `DB_PASSWOR
 
 1. Confirm the target is local/dev (`localhost` / `127.0.0.1` / docker compose `db`).
 2. If host is not local, **stop** and ask the user — this flow is local/dev only.
-3. Prefer loading password via `PGPASSWORD` / compose env; do not echo it into chat logs unnecessarily.
+3. Load password only from compose / `.env` via `PGPASSWORD` or `$POSTGRES_PASSWORD` / `$DB_PASSWORD`. **Never** hardcode, echo, log, or paste the password into chat, docs, commits, or command examples.
 
 Docker one-shot (matches the CLI):
 
 ```bash
+# Export from compose/.env first — do not substitute a literal password here.
 docker compose -f base/docker-compose.yaml exec -T \
   -e PGPASSWORD="$POSTGRES_PASSWORD" \
   db psql -U postgres -d quan-erp -v ON_ERROR_STOP=1
@@ -120,13 +128,13 @@ WHERE name = '<name>' AND plugin_version = '<plugin_version>';
 ## Agent flow
 
 1. Prefer `quan-erp plugin seed <plugin-name>` (interactive prompts for display name / update confirm).
-2. If CLI is unavailable: confirm local/dev DB via compose or `base/backend/.env`, then run `psql` / `docker compose exec db psql`.
-3. Verify with a `SELECT` and report `id` / `name` / `displayName` to the user.
+2. If CLI is unavailable: confirm local/dev DB via compose or `base/backend/.env`, then run `psql` / `docker compose exec db psql` using **env vars only** for passwords.
+3. Verify with a `SELECT` and report `id` / `name` / `displayName` to the user — never report passwords or full connection strings with credentials.
 
 ## Do not
 
 - Seed UAT/prod or non-local databases
-- Expose, hardcode, or paste passwords (docs, chat, commits, command history examples) — use `$POSTGRES_PASSWORD` / `$DB_PASSWORD` / compose env only
+- **Expose passwords** — no literals in docs, chat replies, commit messages, logs, or `-p '…'` examples; use `$POSTGRES_PASSWORD` / `$DB_PASSWORD` / compose env
 - Commit `.env`, passwords, or connection dumps
 - Invent extra columns beyond the README seed shape unless the live `\d module` schema requires it
 - Skip the existence check when seeding a known plugin name

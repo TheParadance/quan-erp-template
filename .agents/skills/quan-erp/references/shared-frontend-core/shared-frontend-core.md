@@ -2,6 +2,9 @@
 
 This document is the definitive technical source of truth for the platform's core infrastructure. It provides exhaustive details on hardware sensors, media interfaces, storage, and system services across Web, Desktop (Electron), and Mobile (Capacitor) environments.
 
+> [!IMPORTANT]
+> **DTO / pagination types** (`RequestIndexPaginationDto`, `Pagination`, …) are type-only — use `import type`. **Classes** such as `RequestDto`, `ResponseDto`, `PluginAPI`, and hardware singletons are value imports. See [Import type](../import-type.md).
+
 ---
 
 ## 🏗 Platform Architecture

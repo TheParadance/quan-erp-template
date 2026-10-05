@@ -2,13 +2,17 @@
   "compilerOptions": {
     // These two settings are REQUIRED for TypeScript to support 'node:url', 'node:path', etc.
     "module": "NodeNext",
-    "moduleResolution": "NodeNext", 
-    
+    "moduleResolution": "NodeNext",
+
     // Ensure you target a modern JS version to support native async/await, etc.
     "target": "ES2022",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "noEmitOnError": true,
+    "skipLibCheck": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src"]
 }

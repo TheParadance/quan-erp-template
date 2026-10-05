@@ -2,6 +2,9 @@
 
 The `@quan-erp/shared-ui` package is the core design system for Quan ERP plugins. It is built on top of **Shadcn UI** and provides a consistent, premium look across the entire platform.
 
+> [!IMPORTANT]
+> Type-only exports (`LazyLocaleType`, `LocaleType`, component prop types, etc.) must use `import type`. UI **components** stay value imports. See [Import type](../import-type.md).
+
 > [!WARNING]
 > **RequestDto and ResponseDto Imports**:
 > Do **NOT** import `RequestDto` or `ResponseDto` from `@quan-erp/shared-ui`. These are backend data-transfer models and are exported exclusively from:

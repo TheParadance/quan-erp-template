@@ -6,7 +6,7 @@
   "module": "dist/module.js",
   "types": "dist/export/export.d.ts",
   "scripts": {
-    "dev": "MODE=dev tsc -b && MODE=dev vite build --watch",
+    "dev": "MODE=dev vite build --watch",
     "build:export": "tsc -b ./tsconfig.export.json",
     "build": "MODE=dev tsc -b && MODE=dev vite build",
     "build:prod": "MODE=prod tsc -b && MODE=prod vite build",
@@ -25,10 +25,10 @@
   ],
   "dependencies": {
     "@icon-park/react": "^1.4.2",
-    "@quan-erp/base-frontend": "1.1.9",
-    "@quan-erp/shared-frontend-core": "1.1.9",
-    "@quan-erp/shared-types": "1.1.9",
-    "@quan-erp/shared-ui": "1.1.9",
+    "@quan-erp/base-frontend": "2.0.1",
+    "@quan-erp/shared-frontend-core": "2.0.1",
+    "@quan-erp/shared-types": "2.0.1",
+    "@quan-erp/shared-ui": "2.0.1",
     "@tanstack/react-query": "^5.90.10",
     "capacitor-file-picker": "^1.0.10",
     "i": "^0.3.7",

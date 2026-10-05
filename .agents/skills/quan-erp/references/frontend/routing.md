@@ -2,6 +2,9 @@
 
 This document explains how a frontend plugin registers its routes, menus, dashboard items, and shortcuts into the Quan ERP core.
 
+> [!IMPORTANT]
+> `PluginModule`, `AppRegistryState`, menu/route types, and related symbols from `@quan-erp/shared-types` are **type-only** — use `import type`. See [Import type](../import-type.md).
+
 ## 1. Plugin Entry Point
 
 Every frontend plugin must export a `Plugin` object of type `PluginModule`. The `register` method is where all injection logic resides. It is crucial to initialize the shared Axios client and App Registry first.

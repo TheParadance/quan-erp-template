@@ -12,10 +12,10 @@ plugins/my-plugin/backend/src/migrations/
 
 ## 1. Define a migration class
 
-Implement `IDatabaseMigration` from `@quan-erp/shared-types`:
+Implement `IDatabaseMigration` from `@quan-erp/shared-types` (type-only — see [Import type](../import-type.md)):
 
 ```typescript
-import { IDatabaseMigration } from "@quan-erp/shared-types";
+import type { IDatabaseMigration } from "@quan-erp/shared-types";
 import { QueryRunner } from "typeorm";
 
 export class MyInitialMigration implements IDatabaseMigration {

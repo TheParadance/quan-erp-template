@@ -2,6 +2,9 @@
 
 In Quan ERP, all backend API communication MUST follow a standardized data structure. This is enforced using the `RequestDto<T>` and `ResponseDto<T>` classes from `@quan-erp/shared-backend-core`.
 
+> [!IMPORTANT]
+> `RequestDto` and `ResponseDto` are **classes** (value imports). Pagination and other `export type` / `export interface` DTOs from shared-backend-core must use `import type`. See [Import type](../import-type.md).
+
 ## Core Principle
 
 > [!IMPORTANT]

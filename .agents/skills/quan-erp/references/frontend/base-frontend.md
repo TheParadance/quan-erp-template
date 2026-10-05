@@ -381,14 +381,19 @@ interface AIAssistantDto {
     allowedRoles: RoleDto[];
 }
 
+/** sdkType values: OpenAISDK | GeminiSDK | QwenSDK (see AISDKAPIType / AI SDK skill). */
 interface AIModelDto {
     id: number;
     name: string;
     sdkType: string;
     model: string;
+    baseUrl?: string | null;
     isActive: boolean;
+    supportsSpeechToSpeech?: boolean;
 }
 ```
+
+> Provider wiring and token usage: [AI Assistant SDK](../backend/ai-sdk.md).
 
 ### Tag
 ```typescript

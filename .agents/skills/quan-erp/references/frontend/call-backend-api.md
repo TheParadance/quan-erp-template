@@ -1,5 +1,8 @@
 # Calling Backend API
 
+> [!IMPORTANT]
+> Use `import type` for `AxiosInstance`, `AxiosError`, and DTO types from `@quan-erp/shared-frontend-core` — not value imports. See [Import type](../import-type.md).
+
 In Quan ERP, frontend plugins communicate with the backend via a shared Axios client. All plugin API calls must follow specific routing conventions to be correctly handled by the modular backend.
 
 ## Routing Standard

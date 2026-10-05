@@ -5,8 +5,12 @@ Each plugin has its **own** `Env` bag. Values are partitioned by plugin name —
 Import from `@quan-erp/shared-backend-core`:
 
 ```typescript
-import { InjectEnv, Env, OnInit, Module, Service } from "@quan-erp/shared-backend-core";
+import { InjectEnv, OnInit, Module, Service } from "@quan-erp/shared-backend-core";
+import type { Env } from "@quan-erp/shared-backend-core";
 ```
+
+> [!IMPORTANT]
+> `Env` is a TypeScript **interface** (no runtime export). Always use `import type { Env }`. A value import breaks SWC builds (`does not provide an export named 'Env'`). See [Import type](../import-type.md).
 
 ## 1. Inject
 

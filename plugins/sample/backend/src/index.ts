@@ -9,7 +9,7 @@ import type {
 import metadata from "../../module.metadata.json" with { type: "json" };
 import { PluginRootModule } from "./feature/sample-es.module.js";
 import { InitialMigration } from "./migrations/initial-migration.js";
-export * from "./export.js";
+export * from "./export.js"; 
 
 export default class Plugin implements IPlugin {
     private app: IAppInstance;
@@ -30,8 +30,8 @@ export default class Plugin implements IPlugin {
         return metadata.pluginVersion;
     }
 
-    getAppModule(): PluginExposedFeature {
-        return null;
+    getAppModule(): PluginExposedFeature | undefined {
+        return undefined;
     }
 
     getRootModule() {

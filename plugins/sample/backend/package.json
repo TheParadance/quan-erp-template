@@ -8,6 +8,7 @@
     "build:prod": "rm -rf dist && MODE=prod rollup -c && cp -r ./assets dist/",
     "build:dev": "rm -rf dist && MODE=dev rollup -c && cp -r ./assets dist/",
     "build:export": "rm -rf dist && MODE=export rollup -c && rm -r dist/assets",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "migration:generate": "node --loader ts-node/esm ./node_modules/typeorm/cli.js migration:generate src/migrations -d src/migrations/source.ts"
   },
   "keywords": [],
@@ -27,14 +28,16 @@
     "dist"
   ],
   "devDependencies": {
-    "@quan-erp/shared-backend-core": "1.1.9",
-    "@quan-erp/shared-types": "1.1.9",
+    "@quan-erp/shared-backend-core": "2.0.1",
+    "@quan-erp/shared-types": "2.0.1",
     "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-swc": "^0.4.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.3.0",
+    "@swc/core": "^1.16.13",
     "@types/express": "^5.0.5",
     "express": "^5.1.0",
     "pg": "^8.16.3",

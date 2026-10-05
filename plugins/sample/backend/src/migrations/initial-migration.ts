@@ -1,10 +1,11 @@
 import { IDatabaseMigration } from "@quan-erp/shared-types";
 import { QueryRunner } from "typeorm";
+import metadata from "../../../module.metadata.json" with { type: "json" };
 
 export class InitialMigration implements IDatabaseMigration {
     async up(queryRunner: QueryRunner): Promise<any> {
         await queryRunner.query(`
-            CREATE TABLE "sample_es_sample" (
+            CREATE TABLE IF NOT EXISTS "${metadata.name}_sample" (
                 "createDate" TIMESTAMP NOT NULL DEFAULT now(),
                 "updateDate" TIMESTAMP NOT NULL DEFAULT now(),
                 "deleteDate" TIMESTAMP,
@@ -17,7 +18,7 @@ export class InitialMigration implements IDatabaseMigration {
     }
 
     async down(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`DROP TABLE "sample_es_sample"`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "${metadata.name}_sample"`);
     }
 
     getName(): string {

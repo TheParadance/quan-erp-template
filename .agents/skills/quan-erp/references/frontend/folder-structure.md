@@ -18,6 +18,7 @@ frontend/
 │   │   │   ├── <domain>.mutations.ts # React Query write hooks
 │   │   │   ├── <domain>.types.ts     # API payload and response types
 │   │   │   └── <domain>.constants.ts # Query keys and API constants
+│   ├── export.ts          # Cross-plugin frontend surface (use `export type` for types — see [Import type](../import-type.md))
 │   ├── lib/               # Utilities, global state, and core client setup
 │   │   ├── axios.ts       # Axios client instance (initialized on register)
 │   │   ├── global-store.ts # Global registry access (initialized on register)

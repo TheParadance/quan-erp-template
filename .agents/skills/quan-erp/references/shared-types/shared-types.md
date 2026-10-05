@@ -2,6 +2,9 @@
 
 The `@quan-erp/shared-types` package provides the fundamental type definitions used across both backend and frontend for plugin registration, metadata management, and system integration.
 
+> [!IMPORTANT]
+> Almost all exports are **type-only** (`interface` / `type`) with **no runtime value**. Always use `import type { IAppInstance, PluginModule, … }`. The one common **value** export is `withApiMetadataFetchFn`. See [Import type](../import-type.md) (required for SWC / Vite builds).
+
 ---
 
 ## Plugin Metadata & Environment

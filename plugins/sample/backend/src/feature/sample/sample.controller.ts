@@ -10,10 +10,9 @@ import {
     JWTAuthorizationHeader,
     ResponseDto,
 } from "@quan-erp/shared-backend-core";
-import metadata from "../../../../module.metadata.json" with { type: "json" };
 import { SampleService } from "./sample.service.js";
 
-@Controller(`/${metadata.name}/sample`)
+@Controller("/sample")
 export class SampleController {
     @Inject(SampleService)
     service: SampleService;

@@ -1,5 +1,8 @@
 # React Query API Declaration Standard
 
+> [!IMPORTANT]
+> `withApiMetadataFetchFn` is a **value** import from `@quan-erp/shared-types`; `RequestIndexPaginationDto` and hook option types are **type-only** (`import type` from `@quan-erp/shared-frontend-core` / `@tanstack/react-query`). See [Import type](../import-type.md).
+
 In the Quan ERP ecosystem, all backend API calls should be declared in dedicated `.api.ts` files using the `withApiMetadataFetchFn` wrapper. This ensures that our API calls are strictly typed, well-structured, and automatically integrated with our Role-Based Access Control (RBAC) permissions system.
 
 ## 1. Directory & File Structure

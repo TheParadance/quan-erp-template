@@ -9,7 +9,7 @@ For a plugin to be loaded by the backend, it must have an entry point that expos
 ### Entry Point (`backend/src/index.ts`)
 The primary entry point for every backend plugin is `backend/src/index.ts`. This file must export a default class that implements the `IPlugin` interface.
 
-To ensure correct implementation, you must import its supporting types from `@quan-erp/shared-types`:
+To ensure correct implementation, you must import its supporting types from `@quan-erp/shared-types`. See [Import type](../import-type.md) for the full list of symbols that must use `import type` (shared-backend-core, shared-types, express, plugin `*.types.ts`).
 
 ```typescript
 import type { 

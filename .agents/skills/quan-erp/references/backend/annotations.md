@@ -29,6 +29,9 @@ logger: BuiltinLogger;
 Injects the system's standard builtin logger into a service or controller. This is shorthand for `@InjectLogger(BuiltinLogger)`.
 
 ```typescript
+import { InjectBuiltinLogger } from "@quan-erp/shared-backend-core";
+import type { Loggable } from "@quan-erp/shared-backend-core";
+
 @InjectBuiltinLogger()
 logger: Loggable;
 ```
@@ -40,6 +43,9 @@ Injects an instance of the `ICache` client.
 - **`name`**: The client identifier (usually `'publisher'`).
 
 ```typescript
+import { CacheClient, CacheManager } from "@quan-erp/shared-backend-core";
+import type { ICache } from "@quan-erp/shared-backend-core";
+
 @CacheClient(CacheManager.DEFAULT_PLUGIN, 'publisher')
 private cache: ICache;
 ```
@@ -61,6 +67,9 @@ Injects the **plugin-scoped** `Env` for the current plugin (not `process.env`, a
 > **Env isolation:** Keys are partitioned by plugin name. Plugin A cannot read Plugin B’s (or `builtin` / base) env via `@InjectEnv()`. If a service calls `this.env.get("SOME_KEY")`, that key MUST be registered on **this** plugin — typically in the root module `@OnInit` with `this.env.set(...)` when missing, then `await this.env.sync()`.
 
 ```typescript
+import { InjectEnv, Service } from "@quan-erp/shared-backend-core";
+import type { Env } from "@quan-erp/shared-backend-core";
+
 @Service()
 export class MyService {
     @InjectEnv()
@@ -71,6 +80,8 @@ export class MyService {
     }
 }
 ```
+
+> `Env` is an **interface** — use `import type { Env }` (required for SWC). See [Import type](../import-type.md).
 
 Cross-plugin **beans** (e.g. `@Inject(S3Client, "storage")`) can still be injected from another plugin scope; only the **Env bag** is isolated.
 
@@ -508,7 +519,7 @@ async removeItem(itemId: number) { ... }
 ## AI Integration
 
 ### `@AITool(options: AIToolOption)`
-Marks a service method as a tool that can be discovered and executed by the AI assistant / MCP clients. **Tool names MUST be hyphen-based (kebab-case)**. For a deep dive (including `mcpAnnotations` conventions), see **[Adding AI Tools](./add-ai-tools.md)**.
+Marks a service method as a tool that can be discovered and executed by the AI assistant / MCP clients. **Tool names MUST be hyphen-based (kebab-case)**. For a deep dive (including `mcpAnnotations` conventions), see **[Adding AI Tools](./add-ai-tools.md)**. For LLM providers / `query`/`stream` / token usage / realtime, see **[AI Assistant SDK](./ai-sdk.md)**.
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -555,6 +566,8 @@ Injects the request body. In Quan ERP, bodies are typically wrapped in a `Reques
 Injects the currently authenticated user information.
 
 ```typescript
+import type { RequestedUser } from "@quan-erp/shared-backend-core";
+
 async update(
     @Param("id") id: number, 
     @Body() body: RequestDto<UpdateMyItemDto>, 

@@ -2,6 +2,8 @@
 
 This document describes how to expose service methods as AI tools that can be called by the AI assistant (and MCP clients such as ChatGPT).
 
+For the chat/realtime **SDK** (providers, `query` / `stream`, token `onUsage`, `AISDKAPIType`), see **[AI Assistant SDK](./ai-sdk.md)**.
+
 ## The `@AITool` Decorator
 
 Use the `@AITool` decorator to mark a service method as an AI tool. This decorator registers the tool with the system and provides the necessary metadata for the AI model.

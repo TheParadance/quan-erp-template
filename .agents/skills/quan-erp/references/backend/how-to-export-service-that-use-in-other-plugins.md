@@ -15,12 +15,15 @@ The Quan ERP modular architecture allows plugins to depend on each other. To mak
 
 Create or update the `backend/src/export.ts` file in your plugin. This file serves as the public API definition for your plugin. Anything exported here will be available to other plugins.
 
+Re-export **types** with `export type { … }`, not `export *` from `*.types.ts` — value re-exports break SWC consumers. See [Import type](../import-type.md) (Plugin-local types / `export.ts`).
+
 ```typescript
 // Example: plugins/my-plugin/backend/src/export.ts
 
 export * from './feature/item/item.service.js';
 export * from './feature/item/item.controller.js';
 export * from './schema/my-item.entity.js';
+export type { ItemDto } from './feature/item/item.types.js';
 ```
 
 ---

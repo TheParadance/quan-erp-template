@@ -21,7 +21,7 @@ backend/
 │   │   └── enum/          # Shared enums for entities
 │   ├── index.ts           # Entry point for the backend
 │   └── export.ts          # External exports (e.g., for other plugins)
-├── rollup.config.js       # Build configuration
+├── rollup.config.js       # Build configuration (see [Import type](../import-type.md) for SWC + type-only imports)
 ├── tsconfig.json          # TypeScript configuration
 └── package.json           # Dependencies and scripts
 ```

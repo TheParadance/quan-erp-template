@@ -4,6 +4,9 @@ Every UI string in a Quan ERP plugin must be localized to support multi-language
 
 Localization is provided by `@quan-erp/shared-ui` (`shared-ui/src/locale/locale.ts`).
 
+> [!IMPORTANT]
+> Import `LazyLocaleType`, `LocaleType`, and similar locale types with `import type` from `@quan-erp/shared-ui`. See [Import type](../import-type.md).
+
 ## Supported Locales
 
 ```typescript

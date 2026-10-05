@@ -7,7 +7,7 @@ Pair with [Plugin Lifecycle & CLI](./plugin-lifecycle-cli.md) for how watch outp
 
 ## When to use
 
-- User asks to scaffold a plugin or project, watch a plugin, inspect a one-shot dev build log (`build:dev:log`), generate plugin DB migrations (`migration create`), prod-build/pack, or start the Docker base stack
+- User asks to scaffold a plugin or project, watch a plugin, inspect a one-shot dev build log (`build:dev:log`), generate plugin DB migrations (`migration create`), prod-build/pack, or start the Docker base stack (`run dev` — opens the frontend in the browser when backend + frontend are up)
 - User asks to **seed** a plugin’s `module.metadata.json` into the local DB (`plugin seed` / `seed-plugin`)
 - User asks to **deploy** a cloud VM, manage deploy tokens, list/delete deployments, or add plugins to an existing deploy
 - User asks to run **cloud-deploy** (portal-backed provisioning; poll status every 5s)
@@ -22,6 +22,20 @@ Pair with [Plugin Lifecycle & CLI](./plugin-lifecycle-cli.md) for how watch outp
 | Primary | `quan-erp <command>` from a project root |
 | npx | `npx @quan-erp/cli <command>` |
 | Global | `npm i -g @quan-erp/cli` then `quan-erp` |
+| Fresh machine | `quan-erp-installer` (standalone; see below) |
+
+### Standalone installer
+
+`helper/cli/installer/` → binary `quan-erp-installer`. Installs Node.js, Docker, `@quan-erp/cli`, then optionally launches the CLI.
+
+| Mode | Flag | When |
+|------|------|------|
+| Native GUI | default / `--gui` | Desktop installer window (Fyne) |
+| Web | `--web` | Browser React+Vite UI on `127.0.0.1` |
+| Terminal | `--terminal` | TTY wizard |
+| Direct | `--direct` or bare `-y`/`--yes` | Scripts / headless |
+
+Also: `--skip-docker`, `--no-launch`, `--version <tag>`. No display → falls back to terminal (TTY) or direct. Build: `make build-installer-local`. All platform packages: `make build-installer-packages` → `helper/cli/outputs/installer/` (mac `.pkg`, linux `.deb`/`.tar.gz`, windows `.zip`).
 
 After global install these commands are equivalent:
 
@@ -45,21 +59,24 @@ Do not advertise bare `dev` (core-dev) in help or README. Prefer `run dev` + `wa
 | `plugin build:dev:log <plugin-name>` / `build:dev:log` | One-shot frontend `npm run build` + backend `npm run build:dev`; print full stdout/stderr (for AI agents). Does not copy artifacts. Exit `1` if either side fails |
 | `plugin migration dry-run <plugin-name> [-h -u -p -d]` | Dry-run TypeORM `migration:generate`; print colored raw SQL; discard temp file. Exit `1` on fail |
 | `plugin migration create <plugin-name> [-h -u -p -d]` | Temp-fill `source.ts` from compose DB (flags override), TypeORM generate, wrap to `IDatabaseMigration` (`migration-<8hex>-<pluginVersion>.ts`), register in `getMigrations()`, restore empty creds. Exit `1` on fail |
-| `plugin migration remove <plugin-name>` | Multi-select migrations (Space), delete files, unregister from `getMigrations()`. Exit `1` on fail |
+| `plugin migration remove <plugin-name>` | Multi-select migrations (Space), or `--migration file.ts` / `--all` with `--yes`. Delete files, unregister from `getMigrations()`. Exit `1` on fail |
 | `plugin new` / `new` / `new-plugin` | Scaffold under `plugins/<name>` from the official template |
 | `new-project [name \| .]` | Vite-style project scaffold from the official template |
 | `plugin build:prod <plugin-name>` / `build:prod` | Production build → `base/available-plugins/<name>/<version>/` |
 | `plugin pack:prod <plugin-name>` / `pack:prod` | Production build plus zip of **only** `available-plugins/<name>/<pluginVersion>/` (not sibling versions) |
-| `plugin publish [plugin-name]` | Upload zip (or pack:prod then upload) to plugin market `POST /public/me/plugin` |
-| `plugin unpublish [plugin-name]` | Unpublish from marketplace (`PUT /public/me/plugin/:idOrName` with `isPublished=false`; blocked if other users purchased it) |
+| `plugin publish <plugin-name> [--marketplace]` | Pack+upload private draft; `--marketplace` also publishes. `@name` = marketplace-only |
+| `plugin unpublish <plugin-name>` | Unpublish from marketplace (name skips confirm) |
 | `upload-plugin [plugin-name]` | Alias for `plugin publish` |
-| `run dev` | `docker compose -f base/docker-compose.yaml up` (foreground); on failure runs `compose down` |
-| `doctor` | Check PostgreSQL (:5432), Redis (:6379), and HTTP ports 80 / 8080 / 8081 are reachable. Exit `1` if any check fails |
-| `plugin clean [plugin-name]` / `clean` | Remove every `node_modules` dir and `package-lock.json` under `plugins/` (all plugins, or one name) |
-| `plugin install <plugin-name>` | `npm install` in `plugins/<name>/{frontend,backend}`; then pin each `@quan-erp-plugins/*` dependency to the exact version from `package.json` (e.g. `@quan-erp-plugins/accounting-backend@1.0.0-beta.3`) |
-| `plugin seed <plugin-name>` / `seed-plugin` | Read `plugins/<name>/module.metadata.json` and INSERT/UPDATE the local `module` row via `docker compose -f base/docker-compose.yaml exec db psql`. Optional `-u`/`-d`/`-p` override compose credentials |
-| `login` | Prompt email + password; save session under the user `quan-erp` config dir |
-| `register` | Prompt email + password (confirm); save session if registration succeeds |
+| `run dev [--no-open] [--backend] [--frontend] [--redis] [--postgres] [--all]` | Open Docker Desktop if needed, `docker compose -f base/docker-compose.yaml up` (foreground); **default log attach = backend only**; opens frontend after backend (:8080) + frontend (:80) respond; on failure runs `compose down` |
+| `setup [--yes]` | Install Node.js LTS (skip if `node` on PATH) and Docker Desktop for this OS/arch (skip if already present). Download shows a progress bar |
+| `doctor` | Check Node.js, Docker Desktop, free disk space, PostgreSQL (:5432), Redis (:6379), and HTTP ports 80 / 8080 / 8081. Exit `1` if any check fails |
+| `plugin clean <plugin-name>` / `clean <name>` | Remove every `node_modules` dir and `package-lock.json` under `plugins/<name>/` only |
+| `plugin clean` / `clean` | `npm cache clean --force` + `docker builder prune -af` + `docker image prune -af` (unused images) |
+| `plugin clean --plugin-only` | All plugins’ `node_modules` + `package-lock.json` (no npm/Docker) |
+| `plugin install <plugin-name>` | Remove `package-lock.json` in frontend + backend (if present), then `npm install` in both; pin each `@quan-erp-plugins/*` dependency to the exact version from `package.json` |
+| `plugin seed <plugin-name>` / `seed-plugin` | Seed `module` row (non-interactive when name given). Optional `--display-name`, `--description`, `--update`, `--flush-redis`, `-u`/`-d`/`-p`. On success, bumps `base/data/frontend/web-env.json` `VITE_MODULE_CACHE_ID` to a random hash |
+| `login [--username] [--password]` | Sign in; password may use `QUAN_ERP_PASSWORD` |
+| `register [--username] [--password]` | Create account; password may use `QUAN_ERP_PASSWORD` |
 | `logout` | Clear the saved session (`credentials.json`) |
 | `whoami` | Print the saved session |
 | `credit` | Show credit balance (`credit history` for ledger) |
@@ -76,13 +93,16 @@ Do not advertise bare `dev` (core-dev) in help or README. Prefer `run dev` + `wa
 
 ```bash
 quan-erp plugin watch <plugin-name>
-quan-erp plugin watch <plugin-name> --debounce 10
+quan-erp plugin watch <plugin-name> --debounce 500
 # alias: quan-erp watch …
 ```
 
 - Plugin folder: `plugins/<plugin-name>/` with `module.metadata.json`
 - Frontend: `npm run dev` in `plugins/<name>/frontend`; copies `dist/` after a successful Vite build
+- If the frontend process exits (e.g. initial `tsc -b` fails before `vite build --watch`), watch keeps listening and **restarts `npm run dev` on the next frontend file change**
+- DevTools (`:8081`): probes every **1s**; build/reload notifies keep retrying every **1s** until DevTools accepts them
 - Backend: rebuilds with `npm run build:dev` on file change
+- `--debounce <ms>` (default **500**): **trailing** quiet-period across all files — many rapid saves coalesce into **one** rebuild; changes during an in-flight backend build are queued for a single follow-up rebuild
 - Failed builds must show in the dashboard (`[FRONTEND]: Build failed` / `[BACKEND]: Build failed` plus error lines from stdout and stderr) — never treat a failed build as completed
 - Dashboard keeps the last **1000** log lines
 - Log prefixes: `[CLI]:`, `[FRONTEND]:`, `[BACKEND]:`
@@ -125,9 +145,13 @@ Requires entities listed in `source.ts`, a reachable DB, and `module.metadata.js
 
 ```bash
 quan-erp plugin migration remove <plugin-name>
+quan-erp plugin migration remove <plugin-name> --migration migration-xxx.ts --yes
+quan-erp plugin migration remove <plugin-name> --all --yes
 ```
 
-Lists `plugins/<name>/backend/src/migrations/*.ts` (except `source.ts`). **Space** toggles selection, **Enter** confirms, then a yes/no confirm. Deletes selected files and removes their import + class from `backend/src/index.ts` `getMigrations()`.
+Interactive: lists `plugins/<name>/backend/src/migrations/*.ts` (except `source.ts`). **Space** toggles selection, **Enter** confirms, then a yes/no confirm.
+
+Non-interactive: pass `--migration <file>` (repeatable) or `--all`, plus **`--yes`** (required). Deletes selected files and removes their import + class from `backend/src/index.ts` `getMigrations()`.
 
 ### `migration dry-run`
 
@@ -143,13 +167,29 @@ Dry-runs TypeORM `migration:generate` against compose DB, prints colored raw SQL
 > **Agents MUST scaffold new plugins with this command.** Never `cp` / rsync another plugin (e.g. `phone-pos`, `sample`) into `plugins/<name>/`.
 
 ```bash
-quan-erp plugin new
-quan-erp plugin new-plugin
-# aliases: quan-erp new / new-plugin
-npx @quan-erp/cli new
+quan-erp new pawnshop
+quan-erp plugin new pawnshop --description "Pawn shop module" --install
+quan-erp new-plugin pawnshop
+quan-erp new
+# aliases: quan-erp plugin new / new-plugin
+npx @quan-erp/cli new pawnshop
 ```
 
-Prompts: name (spaces → hyphens), optional description/type, optional npm install.
+**Agents / non-interactive:** pass the plugin name on the command line (no prompts). `-y` / `--yes` is optional when a name is present.
+
+| Flag | Meaning |
+|------|---------|
+| `<name>` | Plugin folder/name — if present, non-interactive (skip install/seed unless flagged) |
+| `-y` / `--yes` | Explicit non-interactive (name still required) |
+| `--install` | Run npm install in frontend/backend |
+| `--seed` | Seed local module table |
+| `--description text` | Optional description |
+| `--type text` | Optional type |
+| `--version tag` | Template tag (default `latest`) |
+
+Do **not** pipe `/dev/null` or `printf` into `plugin new`.
+
+Prompts (interactive, name omitted): name (spaces → hyphens), optional description/type, optional npm install, optional seed.
 
 Writes `plugins/<name>/` from the official template sample plugin, updates `module.metadata.json` and package names (`@quan-erp-plugins/<name>-backend|frontend`).
 
@@ -168,12 +208,18 @@ Template: `https://github.com/TheParadance/quan-erp-template.git`. After copy, r
 ### `clean`
 
 ```bash
-quan-erp plugin clean                 # all folders under plugins/
-quan-erp plugin clean inventory       # plugins/inventory only
-# alias: quan-erp clean …
+quan-erp plugin clean inventory                    # one plugin: node_modules + package-lock.json only
+quan-erp clean                                     # npm cache + Docker build cache + unused images
+quan-erp plugin clean                              # same as erp clean
+quan-erp clean --plugin-only                       # all plugins only
+quan-erp clean --node-only                         # npm cache only
+quan-erp clean --docker-build-only                 # Docker build cache (docker builder prune -af)
+quan-erp clean --docker-image-only                 # unused Docker images (docker image prune -af)
+quan-erp clean --plugin-only --node-only           # combine scopes
+# alias: quan-erp plugin clean …
 ```
 
-Walks each plugin tree and deletes every `node_modules` directory and `package-lock.json` (including nested packages like `user-side/`). Plugins are cleaned **in parallel batches of 5**. Does not touch `base/` or other roots.
+`plugin clean <name>` (no flags) walks that plugin tree and deletes every `node_modules` / `package-lock.json`. Bare `clean` / `plugin clean` (no name) runs `npm cache clean --force`, then `docker builder prune -af` and `docker image prune -af` — it does **not** wipe plugin `node_modules` unless you pass `--plugin-only` or a plugin name. Scope flags select subsets and may be combined with a plugin name. Starts Docker Desktop briefly if the engine is down for Docker scopes.
 
 ### `plugin install`
 
@@ -184,45 +230,94 @@ quan-erp plugin install inventory
 
 For `plugins/<name>/frontend` and `plugins/<name>/backend` (skips a side if no `package.json`):
 
-1. `npm install`
-2. Collect every `dependencies` key starting with `@quan-erp-plugins/`, strip `^` / `~` / `=` from the version, then `npm install @quan-erp-plugins/accounting-backend@1.0.0-beta.3 …` (exact pins). Skips `file:` / `link:` / `workspace:` / git / URL refs.
+1. Remove `package-lock.json` if present
+2. `npm install`
+3. Collect every `dependencies` key starting with `@quan-erp-plugins/`, strip `^` / `~` / `=` from the version, then `npm install @quan-erp-plugins/accounting-backend@1.0.0-beta.3 …` (exact pins). Skips `file:` / `link:` / `workspace:` / git / URL refs.
 
 Exit `1` if any npm step fails.
 
 ### `seed-plugin`
 
 ```bash
-quan-erp plugin seed my-plugin
+quan-erp plugin seed inventory
+quan-erp plugin seed fujian --update --flush-redis
+quan-erp plugin seed inventory --display-name "Inventory" --description "Stock module"
+# Optional: -u / -d / -p "$POSTGRES_PASSWORD" — never put a real password literal in docs or chat
 # alias: quan-erp seed-plugin …
-# Optional overrides — never hardcode passwords; use env vars only:
-# quan-erp plugin seed my-plugin -u postgres -d quan-erp -p "$POSTGRES_PASSWORD"
 ```
 
-Local/dev only. Reads `plugins/<plugin-name>/module.metadata.json` and seeds (or updates) the `module` table using Postgres credentials from `base/docker-compose.yaml` (`db` service) via:
+Local/dev only. Passing a plugin name is **non-interactive** (no prompts). Reads `plugins/<plugin-name>/module.metadata.json` and seeds (or updates) the `module` table using Postgres credentials from `base/docker-compose.yaml` (`db` service) via:
 
 ```bash
 docker compose -f base/docker-compose.yaml exec -T db psql …
 ```
 
-Optional overrides (default = compose `POSTGRES_*`):
+| Flag | Meaning |
+|------|---------|
+| `--display-name` | Override display name (default: metadata / humanized name) |
+| `--description` | Override description (default: metadata; empty OK) |
+| `--update` | If row exists, UPDATE it (default: skip when already exists) |
+| `--flush-redis` | Run Redis `FLUSHALL` after seed (default: skip) |
+| `-u` / `--user` | DB username override |
+| `-d` / `--database` | DB name override |
+| `-p` / `--password` | DB password override |
 
-| Flag | Long | Overrides |
-|------|------|-----------|
-| `-u` | `--user` | username |
-| `-d` | `--database` | database name |
-| `-p` | `--password` | password (pass via `$POSTGRES_PASSWORD` / `$DB_PASSWORD` — never paste literals into docs, chat, or git) |
+Falls back to host `psql` on `127.0.0.1:<host-port>` if compose exec fails. Requires the local stack (`quan-erp run dev`) so the `db` container is up.
 
-Falls back to host `psql` on `127.0.0.1:<host-port>` if compose exec fails. Prompts for display name (and description when metadata is empty). If a row with the same `(name, plugin_version)` already exists, asks before `UPDATE`. Requires the local stack (`quan-erp run dev`) so the `db` container is up.
+After a successful insert/update, sets `VITE_MODULE_CACHE_ID` in `base/data/frontend/web-env.json` to a new random hex hash so the browser reloads plugin modules.
 
 See [Add module seed](./backend/add-module-seed.md).
 
 ### `run dev`
 
 ```bash
-quan-erp run dev
+quan-erp run dev                         # start all services; stream backend logs only (default)
+quan-erp run dev --no-open
+quan-erp run dev --backend --frontend    # stream backend + frontend logs
+quan-erp run dev --redis --postgres
+quan-erp run dev --all                   # stream every compose service
+# alias: quan-erp base:dev
 ```
 
-Starts the base stack from `base/docker-compose.yaml` in the foreground (`up`, no `-d`). If `up` fails, automatically `down`. Port conflicts (e.g. 6379) are host issues — do not kill unrelated user services unless asked. Alias: `quan-erp base:dev`.
+Opens Docker Desktop if the engine is not ready (poll up to ~120s), then starts the base stack from `base/docker-compose.yaml` in the foreground (`up`, no `-d`). **All services still start**; log streaming uses `docker compose --attach`.
+
+| Flag | Compose service attached |
+|------|--------------------------|
+| *(none)* / `--backend` | `backend` (**default** when no log flags) |
+| `--frontend` | `frontend` |
+| `--redis` | `redis` |
+| `--postgres` / `--db` | `db` (PostgreSQL) |
+| `--all` | every service (overrides other log flags) |
+
+Combine log flags freely, e.g. `--backend --frontend --redis`.
+
+After compose is running, polls until **both** services respond (up to ~5m), then opens the app once in the default browser:
+
+| Service | Compose host port | Ready check |
+|---------|-------------------|-------------|
+| Frontend | `80:80` | `http://127.0.0.1/` |
+| Backend | `8080:8080` | `http://127.0.0.1:8080/` |
+
+- Opens `http://127.0.0.1/app` only after both checks succeed
+- `--no-open` — skip the browser (use in CI / agent loops / headless)
+- If Desktop is not installed, exits with `erp setup`
+- If `up` fails, automatically runs `compose down`
+- Port conflicts (e.g. 6379) are host issues — do not kill unrelated user services unless asked
+
+### `setup`
+
+```bash
+quan-erp setup
+quan-erp setup --yes
+```
+
+Ensures local tooling:
+
+1. **Disk space** — fail early if free space is below the budget for remaining installs (~800 MiB Node, ~3 GiB Docker Desktop).
+2. **Node.js** — skip if `node` is on PATH (warn if major &lt; 18); otherwise download+install latest LTS (progress bar). On Alpine: `apk add nodejs npm` (musl; not the glibc nodejs.org tarball).
+3. **Docker** — Desktop on macOS / Windows / Ubuntu|Debian|Fedora|RHEL amd64; on Alpine: `apk add docker` (+ compose) and start via OpenRC (`rc-service docker start`).
+
+Linux Desktop supports Ubuntu/Debian/Fedora/RHEL (amd64). On **Alpine**, Docker Desktop is not available.
 
 ### `doctor`
 
@@ -230,7 +325,7 @@ Starts the base stack from `base/docker-compose.yaml` in the foreground (`up`, n
 quan-erp doctor
 ```
 
-Checks local stack reachability: PostgreSQL (`:5432`), Redis (`:6379`), and HTTP on ports `80`, `8080`, and `8081`. Exit `1` if any check fails. Suggests `erp run dev` when checks fail.
+Checks Node.js, Docker Desktop, free disk space (≥ ~4.2 GiB for local stack, plus install headroom if Node/Docker are missing), PostgreSQL (`:5432`), Redis (`:6379`), and HTTP on ports `80`, `8080`, and `8081`. Exit `1` if any check fails. Suggests `erp setup` when tooling/disk fails, or `erp run dev` when only ports fail.
 
 ### CLI state (`quan-erp` dir)
 
@@ -254,32 +349,35 @@ Go helpers: `helper/cli/src/utils/state`. Session files live in the OS `quan-erp
 
 ```bash
 quan-erp login
-quan-erp register
+quan-erp login --username a@b.com --password '…'
+quan-erp register --username a@b.com --password '…'
+QUAN_ERP_PASSWORD='…' quan-erp login --username a@b.com
 quan-erp whoami
 quan-erp logout
 ```
 
-Password is always prompted (never a flag). Username prompt is **email**. There are no `--server` / `--username` flags. `login` / `register` / `deploy` / `cloud-deploy` need a reachable management server or they fail with connection refused.
+Username is **email**. With `--username` + `--password` (or `QUAN_ERP_PASSWORD`), login/register are non-interactive. Omitting flags keeps prompts. `login` / `register` / `deploy` / `cloud-deploy` need a reachable management server or they fail with connection refused.
 
 ### `plugin publish`
 
 ```bash
-quan-erp plugin publish
 quan-erp plugin publish my-plugin
+quan-erp plugin publish my-plugin --marketplace
+quan-erp plugin publish @my-plugin
 quan-erp plugin publish ./my-plugin.zip
 quan-erp upload-plugin my-plugin
 ```
 
-Uploads to the portal **plugin market** (`POST /public/me/plugin`, form field `file`) — same as the portal Private tab. Zip must contain `module.metadata.json`. A bare plugin name runs `pack:prod` then upload. Marketplace publish uses `PUT` with `isPublished=true` (icon, category, description ≥10 chars).
+Uploads to the portal **plugin market** (`POST /public/me/plugin`, form field `file`) — same as the portal Private tab. A bare plugin name runs `pack:prod` then upload and leaves the draft **private** (no confirm). `--marketplace` also sets `isPublished=true` (draft must already have icon, category, description ≥10 chars — no interactive picks). `@name` publishes an existing private draft.
 
 ### `plugin unpublish`
 
 ```bash
-quan-erp plugin unpublish
 quan-erp plugin unpublish my-plugin
+quan-erp plugin unpublish
 ```
 
-Sets `isPublished=false` via `PUT /public/me/plugin/:idOrName` (same as the portal). Keeps the private draft. Blocked if other users have purchased the plugin. Interactive select when no name is given.
+Sets `isPublished=false` via `PUT /public/me/plugin/:idOrName`. Passing a name skips confirmation. Interactive select when no name is given.
 
 ### `deploy`
 
@@ -323,8 +421,7 @@ Same as `deploy`. Source: `helper/cli/src/cli/cloud-deploy/`.
 ## Agent rules
 
 1. Restart a running `quan-erp plugin watch` after the local CLI binary is rebuilt.
-2. To inspect plugin compile errors, run `quan-erp plugin build:dev:log <plugin-name>
-# alias: quan-erp build:dev:log …` — do not use `watch` for this (TUI clears the screen).
+2. To inspect plugin compile errors, run `quan-erp plugin build:dev:log <plugin-name>` (alias `build:dev:log`) — do not use `watch` for this (TUI clears the screen).
 3. **Do not `git add .`** mixed CLI + local `file:` / `web-env.json` / `.DS_Store`.
 4. **npm publish** of `@quan-erp/cli` goes to `https://registry.npmjs.org/` (`make publish-cli`). Scope `@quan-erp/cli` requires the **`quan-erp`** npm org.
 5. **README-only npm updates** need a **patch bump** if that version is already published.
@@ -332,6 +429,7 @@ Same as `deploy`. Source: `helper/cli/src/cli/cloud-deploy/`.
 7. **Do not document `dev`** in help/README unless the user asks.
 8. **`deploy` and `cloud-deploy` are interactive** and need `quan-erp login` plus a reachable management server. Do not script region/size/token flags that do not exist. Do not add local SSH/SDK provision back.
 9. Upload plugins with `quan-erp plugin publish` → `POST /public/me/plugin`, never `/plugin-package`.
+10. For agent/CI local-stack starts, prefer `quan-erp run dev --no-open` so the CLI does not try to open a browser.
 
 ## Maintainers — package & publish
 

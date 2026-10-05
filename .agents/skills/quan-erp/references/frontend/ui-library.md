@@ -14,6 +14,8 @@ This library is built on top of **Shadcn UI**, providing a modern, consistent, a
 For a detailed list of components, hooks, and example usage, please refer to the:
 **[Shared UI Documentation](../shared-ui/shared-ui.md)**
 
+Type-only symbols from `@quan-erp/shared-ui` (locale types, prop types) require `import type` — see **[Import type](../import-type.md)**.
+
 ## Styling & CSS Isolation
 
 Quan ERP uses scoped Tailwind CSS for plugins to prevent style leakage. This requires specific implementation patterns, especially when using portaled components like Dialogs or Sheets.

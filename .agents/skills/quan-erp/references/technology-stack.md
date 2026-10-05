@@ -5,6 +5,7 @@ This document outlines the core technologies used across the Quan ERP ecosystem 
 ## Backend
 - **@quan-erp/ Backend Framework**: A custom, high-performance Node.js framework built on top of Express.js and optimized for ERP modularity.
 - **TypeScript**: The primary language for all backend services, ensuring type safety and code quality.
+- **SWC (plugin backend bundles)**: Plugin backends compile with SWC + `decoratorMetadata`; type-only symbols must use `import type` or runtime loads fail. See [Import type](./import-type.md).
 - **PostgreSQL**: The relational database used for persistent data storage.
 - **Redis**: Used for caching, session management, and real-time data handling.
 
